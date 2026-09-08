@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppShell } from './components/AppShell';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { AcademicPage } from './pages/AcademicPage';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/academic" element={<AcademicPage />} />
               {/* more pages will be added here as we build them */}
             </Route>
           </Route>
