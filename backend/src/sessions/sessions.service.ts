@@ -185,7 +185,7 @@ export class SessionsService {
     return this.prisma.session.findMany({
       where: {
         roomId: filters.roomId,
-        status: filters.status as any,
+        status: filters.status ? (filters.status as any) : { not: 'SUPERSEDED' },
       },
       include: { room: true, module: true, lecturer: true },
       orderBy: [{ sessionDate: 'asc' }, { startTime: 'asc' }],
