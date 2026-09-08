@@ -5,6 +5,7 @@ import { AppShell } from './components/AppShell';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AcademicPage } from './pages/AcademicPage';
+import { StructurePage } from './pages/StructurePage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/academic" element={<AcademicPage />} />
+              <Route path="/structure" element={<StructurePage />} />
               {/* more pages will be added here as we build them */}
             </Route>
           </Route>
