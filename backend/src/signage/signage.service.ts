@@ -31,7 +31,6 @@ export class SignageService {
       throw new NotFoundException(`Unknown display: ${deviceIdentifier}`);
     }
 
-    // Every successful poll updates "Last Seen" (Addendum 2's Displays table)
     await this.displayService.recordHeartbeat(deviceIdentifier);
 
     const rooms = await this.prisma.room.findMany({ where: { sideId: display.sideId } });
@@ -40,7 +39,7 @@ export class SignageService {
     const today = startOfToday();
     const now = new Date();
 
-    const todaySessions = await this.prisma.session.findMany({
+    const activeToday = await this.prisma.session.findMany({
       where: {
         roomId: { in: roomIds },
         sessionDate: today,
@@ -50,15 +49,38 @@ export class SignageService {
       orderBy: { startTime: 'asc' },
     });
 
-    const ongoing = todaySessions.filter((s) => {
+    const ongoing = activeToday.filter((s) => {
       const start = combineDateAndTime(today, s.startTime);
       const end = combineDateAndTime(today, s.endTime);
       return start <= now && now < end;
     });
 
-    const upcoming = todaySessions.filter((s) => {
+    const upcoming = activeToday.filter((s) => {
       const start = combineDateAndTime(today, s.startTime);
       return start > now;
+    });
+
+    // Cancelled: sessions that WERE scheduled for today in this side's rooms, now Cancelled
+    const cancelled = await this.prisma.session.findMany({
+      where: {
+        roomId: { in: roomIds },
+        sessionDate: today,
+        status: 'CANCELLED',
+      },
+      include: { room: true, module: true, lecturer: true },
+      orderBy: { startTime: 'asc' },
+    });
+
+    // Rescheduled: the NEW version's sessionDate is today — i.e. it landed on today's schedule via a reschedule
+    const rescheduled = await this.prisma.session.findMany({
+      where: {
+        roomId: { in: roomIds },
+        sessionDate: today,
+        status: 'RESCHEDULED',
+        originalSessionId: { not: null },
+      },
+      include: { room: true, module: true, lecturer: true, originalSession: true },
+      orderBy: { startTime: 'asc' },
     });
 
     return {
@@ -70,6 +92,8 @@ export class SignageService {
       currentTime: now.toISOString(),
       ongoing,
       upcoming,
+      cancelled,
+      rescheduled,
     };
   }
 }
