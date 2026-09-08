@@ -5,6 +5,7 @@ import { CancelSessionDto } from './dto/cancel-session.dto';
 import { RescheduleSessionDto } from './dto/reschedule-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
+import { UpdateSessionDto } from './dto/update-session.dto';
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
@@ -37,6 +38,11 @@ export class SessionsController {
   @Patch(':id/reopen')
   reopen(@Param('id', ParseIntPipe) id: number) {
     return this.sessionsService.reopen(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSessionDto) {
+    return this.sessionsService.update(id, dto);
   }
 
   @Patch(':id/reschedule')

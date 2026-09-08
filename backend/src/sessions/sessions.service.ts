@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { RescheduleSessionDto } from './dto/reschedule-session.dto';
+import { UpdateSessionDto } from './dto/update-session.dto';
 
 // Prisma's @db.Time fields expect a Date object; only the time-of-day portion is stored
 function timeStringToDate(time: string): Date {
@@ -72,6 +73,31 @@ export class SessionsService {
     return this.prisma.session.update({
       where: { id },
       data: { status: 'SCHEDULED', cancellationReason: null },
+      include: { room: true, module: true, lecturer: true },
+    });
+  }
+
+  async update(id: number, dto: UpdateSessionDto) {
+    const session = await this.findOne(id);
+    if (session.status !== 'SCHEDULED' && session.status !== 'RESCHEDULED') {
+      throw new ConflictException(`Only Scheduled or Rescheduled sessions can be edited (this one is ${session.status}).`);
+    }
+
+    // If the room is changing, re-run the conflict check against this session's existing date/time
+    if (dto.roomId && dto.roomId !== session.roomId) {
+      const conflict = await this.findConflictingSession(dto.roomId, session.sessionDate, session.startTime, session.endTime, id);
+      if (conflict) {
+        const conflictStart = conflict.startTime.toISOString().substring(11, 16);
+        const conflictEnd = conflict.endTime.toISOString().substring(11, 16);
+        throw new ConflictException(
+          `Cannot move to that room — it already has a session (${conflict.module.code}) from ${conflictStart} to ${conflictEnd} at this session's time.`,
+        );
+      }
+    }
+
+    return this.prisma.session.update({
+      where: { id },
+      data: dto,
       include: { room: true, module: true, lecturer: true },
     });
   }
