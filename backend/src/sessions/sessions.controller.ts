@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
+import { CancelSessionDto } from './dto/cancel-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
 
@@ -25,5 +26,15 @@ export class SessionsController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.sessionsService.findOne(id);
+  }
+
+  @Patch(':id/cancel')
+  cancel(@Param('id', ParseIntPipe) id: number, @Body() dto: CancelSessionDto) {
+    return this.sessionsService.cancel(id, dto.reason);
+  }
+
+  @Patch(':id/reopen')
+  reopen(@Param('id', ParseIntPipe) id: number) {
+    return this.sessionsService.reopen(id);
   }
 }

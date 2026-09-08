@@ -40,6 +40,41 @@ export class SessionsService {
     });
   }
 
+  async cancel(id: number, reason?: string) {
+    const session = await this.findOne(id);
+    if (session.status !== 'SCHEDULED' && session.status !== 'RESCHEDULED') {
+      throw new ConflictException(`Only Scheduled or Rescheduled sessions can be cancelled (this one is ${session.status}).`);
+    }
+
+    return this.prisma.session.update({
+      where: { id },
+      data: { status: 'CANCELLED', cancellationReason: reason },
+      include: { room: true, module: true, lecturer: true },
+    });
+  }
+
+  async reopen(id: number) {
+    const session = await this.findOne(id);
+    if (session.status !== 'CANCELLED') {
+      throw new ConflictException(`Only Cancelled sessions can be reopened (this one is ${session.status}).`);
+    }
+
+    const conflict = await this.findConflictingSession(session.roomId, session.sessionDate, session.startTime, session.endTime, id);
+    if (conflict) {
+      const conflictStart = conflict.startTime.toISOString().substring(11, 16);
+      const conflictEnd = conflict.endTime.toISOString().substring(11, 16);
+      throw new ConflictException(
+        `Cannot reopen — another session (${conflict.module.code}) was booked into this room from ${conflictStart} to ${conflictEnd} after this one was cancelled.`,
+      );
+    }
+
+    return this.prisma.session.update({
+      where: { id },
+      data: { status: 'SCHEDULED', cancellationReason: null },
+      include: { room: true, module: true, lecturer: true },
+    });
+  }
+
   private async findConflictingSession(
     roomId: number,
     sessionDate: Date,
