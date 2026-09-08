@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -41,5 +42,21 @@ export class AuthService {
         role: admin.role,
       },
     };
+  }
+
+  async changePassword(adminId: number, dto: ChangePasswordDto) {
+    const admin = await this.prisma.admin.findUnique({ where: { id: adminId } });
+    if (!admin || !admin.passwordHash) {
+      throw new UnauthorizedException('Account not found or not yet activated');
+    }
+
+    const currentMatches = await bcrypt.compare(dto.currentPassword, admin.passwordHash);
+    if (!currentMatches) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.admin.update({ where: { id: adminId }, data: { passwordHash: newPasswordHash } });
+    return { message: 'Password updated successfully' };
   }
 }
