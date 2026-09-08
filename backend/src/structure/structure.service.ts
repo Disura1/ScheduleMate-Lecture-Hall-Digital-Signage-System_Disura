@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { startOfToday, combineDateAndTime } from '../common/date-time.util';
 
 @Injectable()
 export class StructureService {
@@ -76,5 +77,90 @@ export class StructureService {
       throw new NotFoundException(`Room ${id} not found`);
     }
     return room;
+  }
+
+  async getRoomStatus(filters: { buildingId?: number; floorId?: number; sideId?: number; search?: string }) {
+    const rooms = await this.prisma.room.findMany({
+      where: {
+        side: {
+          id: filters.sideId,
+          floor: {
+            id: filters.floorId,
+            buildingId: filters.buildingId,
+          },
+        },
+      },
+      include: { side: { include: { floor: { include: { building: true } } } } },
+    });
+
+    const today = startOfToday();
+    const now = new Date();
+    const UPCOMING_SOON_WINDOW_MINUTES = 30;
+
+    const results = await Promise.all(
+      rooms.map(async (room) => {
+        const todaySessions = await this.prisma.session.findMany({
+          where: { roomId: room.id, sessionDate: today, status: { in: ['SCHEDULED', 'RESCHEDULED', 'CANCELLED'] } },
+          include: { module: true, lecturer: true },
+        });
+
+        const ongoing = todaySessions.find((s) => {
+          if (s.status === 'CANCELLED') return false;
+          const start = combineDateAndTime(today, s.startTime);
+          const end = combineDateAndTime(today, s.endTime);
+          return start <= now && now < end;
+        });
+
+        const cancelledNow = todaySessions.find((s) => {
+          if (s.status !== 'CANCELLED') return false;
+          const start = combineDateAndTime(today, s.startTime);
+          const end = combineDateAndTime(today, s.endTime);
+          return start <= now && now < end;
+        });
+
+        const upcomingSoon = todaySessions.find((s) => {
+          if (s.status === 'CANCELLED') return false;
+          const start = combineDateAndTime(today, s.startTime);
+          const minutesUntilStart = (start.getTime() - now.getTime()) / 60000;
+          return minutesUntilStart > 0 && minutesUntilStart <= UPCOMING_SOON_WINDOW_MINUTES;
+        });
+
+        let status: string;
+        let currentSession: (typeof todaySessions)[number] | undefined;
+
+        if (ongoing) {
+          status = 'ONGOING_NOW';
+          currentSession = ongoing;
+        } else if (cancelledNow) {
+          status = 'TEMPORARILY_UNAVAILABLE';
+          currentSession = cancelledNow;
+        } else if (upcomingSoon) {
+          status = 'UPCOMING_SOON';
+          currentSession = upcomingSoon;
+        } else {
+          status = 'AVAILABLE';
+        }
+
+        return {
+          room,
+          status,
+          currentSession: currentSession
+            ? { module: currentSession.module, lecturer: currentSession.lecturer, status: currentSession.status }
+            : null,
+        };
+      }),
+    );
+
+    if (filters.search) {
+      const term = filters.search.toLowerCase();
+      return results.filter(
+        (r) =>
+          r.currentSession?.module.code.toLowerCase().includes(term) ||
+          r.currentSession?.module.name.toLowerCase().includes(term) ||
+          r.currentSession?.lecturer.name.toLowerCase().includes(term),
+      );
+    }
+
+    return results;
   }
 }

@@ -62,4 +62,19 @@ export class StructureController {
   deleteRoom(@Param('id', ParseIntPipe) id: number) {
     return this.structureService.deleteRoom(id);
   }
+
+  @Get('rooms/status')
+  getRoomStatus(
+    @Query('buildingId') buildingId?: string,
+    @Query('floorId') floorId?: string,
+    @Query('sideId') sideId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.structureService.getRoomStatus({
+      buildingId: buildingId ? parseInt(buildingId, 10) : undefined,
+      floorId: floorId ? parseInt(floorId, 10) : undefined,
+      sideId: sideId ? parseInt(sideId, 10) : undefined,
+      search,
+    });
+  }
 }
