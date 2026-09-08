@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
+import { UpdateAdminDto } from './dto/update-admin.dto';
 
 @Controller('admin-accounts')
 export class AdminAccountsController {
@@ -43,5 +44,23 @@ export class AdminAccountsController {
   @Roles('SUPER_ADMIN')
   reactivate(@Param('id', ParseIntPipe) id: number) {
     return this.adminAccountsService.reactivate(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  updateProfile(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAdminDto) {
+    return this.adminAccountsService.updateProfile(id, dto);
+  }
+
+  @Patch(':id/role')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  updateRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('role') role: 'ADMIN' | 'SUPER_ADMIN',
+    @CurrentAdmin() admin: { id: number },
+  ) {
+    return this.adminAccountsService.updateRole(id, role, admin.id);
   }
 }

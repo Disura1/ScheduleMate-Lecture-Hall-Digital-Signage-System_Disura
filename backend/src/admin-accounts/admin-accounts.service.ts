@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
 
 const ACTIVATION_WINDOW_HOURS = 24;
 
@@ -106,6 +107,36 @@ export class AdminAccountsService {
         // passwordHash, resetToken deliberately excluded — never sent to the client
       },
       orderBy: { fullName: 'asc' },
+    });
+  }
+
+  async updateProfile(targetId: number, dto: UpdateAdminDto) {
+    await this.findOrThrow(targetId);
+
+    if (dto.email) {
+      const existing = await this.prisma.admin.findUnique({ where: { email: dto.email } });
+      if (existing && existing.id !== targetId) {
+        throw new ConflictException(`Email "${dto.email}" is already registered to another account`);
+      }
+    }
+
+    return this.prisma.admin.update({
+      where: { id: targetId },
+      data: dto,
+      select: { id: true, fullName: true, username: true, email: true, role: true, status: true, createdAt: true },
+    });
+  }
+
+  async updateRole(targetId: number, role: 'ADMIN' | 'SUPER_ADMIN', actingAdminId: number) {
+    if (targetId === actingAdminId) {
+      throw new ConflictException('You cannot change your own role.');
+    }
+    await this.findOrThrow(targetId);
+
+    return this.prisma.admin.update({
+      where: { id: targetId },
+      data: { role },
+      select: { id: true, fullName: true, username: true, email: true, role: true, status: true, createdAt: true },
     });
   }
 }
