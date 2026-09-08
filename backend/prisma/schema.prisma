@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ENUMS ----------
+
+enum RoomType {
+  LECTURE
+  LAB
+  LARGE_LECTURE_HALL
+}
+
+enum SessionStatus {
+  SCHEDULED
+  CANCELLED
+  RESCHEDULED
+  COMPLETED
+  SUPERSEDED // retired version in a reschedule chain — never shown as a live row
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AdminStatus {
+  ACTIVE
+  DEACTIVATED
+}
+
+enum ProfileChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ---------- CAMPUS STRUCTURE ----------
+
+model Building {
+  id     Int     @id @default(autoincrement())
+  name   String
+  code   String  @unique // e.g. "M", "N"
+  floors Floor[]
+}
+
+model Floor {
+  id          Int      @id @default(autoincrement())
+  floorNumber Int
+  building    Building @relation(fields: [buildingId], references: [id])
+  buildingId  Int
+  sides       Side[]
+
+  @@unique([buildingId, floorNumber])
+}
+
+model Side {
+  id       Int       @id @default(autoincrement())
+  sideCode String // e.g. "A", "B", "G", "F"
+  floor    Floor     @relation(fields: [floorId], references: [id])
+  floorId  Int
+  rooms    Room[]
+  displays Display[]
+
+  @@unique([floorId, sideCode])
+}
+
+model Room {
+  id       Int       @id @default(autoincrement())
+  code     String    @unique // e.g. "M-05A-L01"
+  type     RoomType
+  side     Side      @relation(fields: [sideId], references: [id])
+  sideId   Int
+  sessions Session[]
+}
+
+model Display {
+  id               Int       @id @default(autoincrement())
+  deviceIdentifier String    @unique
+  side             Side      @relation(fields: [sideId], references: [id])
+  sideId           Int
+  lastSeenAt       DateTime?
+}
+
+// ---------- ACADEMIC DATA ----------
+
+model Module {
+  id       Int       @id @default(autoincrement())
+  code     String    @unique // e.g. "IT1130"
+  name     String
+  sessions Session[]
+}
+
+model Lecturer {
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String
+  sessions Session[]
+}
+
+// ---------- ADMIN ACCOUNTS ----------
+
+model Admin {
+  id           Int         @id @default(autoincrement())
+  fullName     String
+  username     String      @unique // permanent — never editable, by anyone, once created
+  email        String      @unique
+  passwordHash String
+  role         AdminRole   @default(ADMIN)
+  status       AdminStatus @default(ACTIVE)
+  createdAt    DateTime    @default(now())
+
+  sessionsCreated       Session[]              @relation("SessionCreatedBy")
+  profileChangeRequests ProfileChangeRequest[] @relation("Requester")
+  requestsReviewed      ProfileChangeRequest[] @relation("Reviewer")
+}
+
+// Supports the Request Profile Change -> Pending Requests -> Approve/Reject flow (Addendum 5)
+model ProfileChangeRequest {
+  id                Int                        @id @default(autoincrement())
+  requester         Admin                      @relation("Requester", fields: [requesterId], references: [id])
+  requesterId       Int
+  requestedFullName String
+  requestedEmail    String
+  reason            String?
+  status            ProfileChangeRequestStatus @default(PENDING)
+  reviewer          Admin?                     @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewerId        Int?
+  rejectionReason   String?
+  createdAt         DateTime                   @default(now())
+  reviewedAt        DateTime?
+}
+
+// ---------- SESSIONS ----------
+
+model Session {
+  id               Int      @id @default(autoincrement())
+  room             Room     @relation(fields: [roomId], references: [id])
+  roomId           Int
+  module           Module   @relation(fields: [moduleId], references: [id])
+  moduleId         Int
+  lecturer         Lecturer @relation(fields: [lecturerId], references: [id])
+  lecturerId       Int
+  createdByAdmin   Admin    @relation("SessionCreatedBy", fields: [createdByAdminId], references: [id])
+  createdByAdminId Int
+
+  // Self-reference: points to the session this one replaced (nullable — null for an original booking)
+  originalSession     Session?  @relation("RescheduleChain", fields: [originalSessionId], references: [id])
+  originalSessionId   Int?
+  rescheduledVersions Session[] @relation("RescheduleChain")
+
+  sessionDate        DateTime      @db.Date
+  startTime          DateTime      @db.Time
+  endTime            DateTime      @db.Time
+  status             SessionStatus @default(SCHEDULED)
+  cancellationReason String?
+  rescheduleReason   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Speeds up conflict-check lookups; actual overlap prevention happens in application code (see note above)
+  @@index([roomId, sessionDate])
+}
