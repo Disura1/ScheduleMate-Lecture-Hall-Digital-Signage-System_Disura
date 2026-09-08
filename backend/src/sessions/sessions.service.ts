@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSessionDto } from './dto/create-session.dto';
+import { RescheduleSessionDto } from './dto/reschedule-session.dto';
 
 // Prisma's @db.Time fields expect a Date object; only the time-of-day portion is stored
 function timeStringToDate(time: string): Date {
@@ -73,6 +74,65 @@ export class SessionsService {
       data: { status: 'SCHEDULED', cancellationReason: null },
       include: { room: true, module: true, lecturer: true },
     });
+  }
+
+  async reschedule(id: number, dto: RescheduleSessionDto, createdByAdminId: number) {
+    const original = await this.findOne(id);
+    if (original.status !== 'SCHEDULED' && original.status !== 'RESCHEDULED') {
+      throw new ConflictException(`Only Scheduled or Rescheduled sessions can be rescheduled (this one is ${original.status}).`);
+    }
+
+    const newRoomId = dto.roomId ?? original.roomId;
+    const newSessionDate = new Date(dto.sessionDate);
+    const newStartTime = timeStringToDate(dto.startTime);
+    const newEndTime = timeStringToDate(dto.endTime);
+
+    // Exclude the original — it's about to be superseded, so it shouldn't block its own replacement
+    const conflict = await this.findConflictingSession(newRoomId, newSessionDate, newStartTime, newEndTime, id);
+    if (conflict) {
+      const conflictStart = conflict.startTime.toISOString().substring(11, 16);
+      const conflictEnd = conflict.endTime.toISOString().substring(11, 16);
+      throw new ConflictException(
+        `Cannot reschedule — room already has a session (${conflict.module.code}) from ${conflictStart} to ${conflictEnd} on that date.`,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.session.update({
+        where: { id },
+        data: { status: 'SUPERSEDED' },
+      });
+
+      return tx.session.create({
+        data: {
+          roomId: newRoomId,
+          moduleId: original.moduleId,
+          lecturerId: original.lecturerId,
+          createdByAdminId,
+          originalSessionId: id,
+          sessionDate: newSessionDate,
+          startTime: newStartTime,
+          endTime: newEndTime,
+          status: 'RESCHEDULED',
+          rescheduleReason: dto.reason,
+        },
+        include: { room: true, module: true, lecturer: true },
+      });
+    });
+  }
+
+  async getHistory(id: number) {
+    const chain = [];
+    let current = await this.findOne(id);
+    chain.unshift(current);
+
+    // Walk backward through originalSessionId until we reach the very first booking
+    while (current.originalSessionId) {
+      current = await this.findOne(current.originalSessionId);
+      chain.unshift(current);
+    }
+
+    return chain;
   }
 
   private async findConflictingSession(

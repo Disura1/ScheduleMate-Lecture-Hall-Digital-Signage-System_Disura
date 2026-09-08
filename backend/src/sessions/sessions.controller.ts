@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuar
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { CancelSessionDto } from './dto/cancel-session.dto';
+import { RescheduleSessionDto } from './dto/reschedule-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
 
@@ -36,5 +37,19 @@ export class SessionsController {
   @Patch(':id/reopen')
   reopen(@Param('id', ParseIntPipe) id: number) {
     return this.sessionsService.reopen(id);
+  }
+
+  @Patch(':id/reschedule')
+  reschedule(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RescheduleSessionDto,
+    @CurrentAdmin() admin: { id: number },
+  ) {
+    return this.sessionsService.reschedule(id, dto, admin.id);
+  }
+
+  @Get(':id/history')
+  getHistory(@Param('id', ParseIntPipe) id: number) {
+    return this.sessionsService.getHistory(id);
   }
 }
