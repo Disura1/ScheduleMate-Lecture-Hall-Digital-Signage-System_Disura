@@ -7,9 +7,10 @@ import { StructureModule } from './structure/structure.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AcademicModule } from './academic/academic.module';
 import { DisplayModule } from './display/display.module';
+import { SignageModule } from './signage/signage.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, StructureModule, SessionsModule, AcademicModule, DisplayModule],
+  imports: [PrismaModule, AuthModule, StructureModule, SessionsModule, AcademicModule, DisplayModule, SignageModule],
   controllers: [AppController],
   providers: [AppService],
 })
