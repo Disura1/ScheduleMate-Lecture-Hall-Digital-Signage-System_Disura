@@ -57,6 +57,42 @@ export class AdminAccountsService {
     });
   }
 
+  async deactivate(targetId: number, actingAdminId: number) {
+    if (targetId === actingAdminId) {
+      throw new ConflictException('You cannot deactivate your own account.');
+    }
+
+    const target = await this.findOrThrow(targetId);
+    if (target.status === 'DEACTIVATED') {
+      throw new ConflictException('This account is already deactivated.');
+    }
+
+    return this.prisma.admin.update({
+      where: { id: targetId },
+      data: { status: 'DEACTIVATED' },
+      select: { id: true, fullName: true, username: true, email: true, role: true, status: true, createdAt: true },
+    });
+  }
+
+  async reactivate(targetId: number) {
+    const target = await this.findOrThrow(targetId);
+    if (target.status === 'ACTIVE') {
+      throw new ConflictException('This account is already active.');
+    }
+
+    return this.prisma.admin.update({
+      where: { id: targetId },
+      data: { status: 'ACTIVE' },
+      select: { id: true, fullName: true, username: true, email: true, role: true, status: true, createdAt: true },
+    });
+  }
+
+  private async findOrThrow(id: number) {
+    const admin = await this.prisma.admin.findUnique({ where: { id } });
+    if (!admin) throw new NotFoundException(`Admin ${id} not found`);
+    return admin;
+  }
+
   findAll() {
     return this.prisma.admin.findMany({
       select: {

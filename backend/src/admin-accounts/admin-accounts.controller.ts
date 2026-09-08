@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { AdminAccountsService } from './admin-accounts.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentAdmin } from '../auth/current-admin.decorator';
 
 @Controller('admin-accounts')
 export class AdminAccountsController {
@@ -28,5 +29,19 @@ export class AdminAccountsController {
   @Post('activate')
   activate(@Body() dto: ActivateAccountDto) {
     return this.adminAccountsService.activate(dto.token, dto.password);
+  }
+
+  @Patch(':id/deactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  deactivate(@Param('id', ParseIntPipe) id: number, @CurrentAdmin() admin: { id: number }) {
+    return this.adminAccountsService.deactivate(id, admin.id);
+  }
+
+  @Patch(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  reactivate(@Param('id', ParseIntPipe) id: number) {
+    return this.adminAccountsService.reactivate(id);
   }
 }
