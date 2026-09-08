@@ -13,13 +13,16 @@ export class AuthService {
   async login(username: string, password: string) {
     const admin = await this.prisma.admin.findUnique({ where: { username } });
 
-    // Same error for "no such user" and "wrong password" — never reveal which one it was
     if (!admin) {
       throw new UnauthorizedException('Invalid username or password');
     }
 
     if (admin.status === 'DEACTIVATED') {
       throw new UnauthorizedException('This account has been deactivated');
+    }
+
+    if (!admin.passwordHash) {
+      throw new UnauthorizedException('This account has not been activated yet. Check your email for the activation link.');
     }
 
     const passwordMatches = await bcrypt.compare(password, admin.passwordHash);

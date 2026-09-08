@@ -105,14 +105,16 @@ model Lecturer {
 // ---------- ADMIN ACCOUNTS ----------
 
 model Admin {
-  id           Int         @id @default(autoincrement())
-  fullName     String
-  username     String      @unique // permanent — never editable, by anyone, once created
-  email        String      @unique
-  passwordHash String
-  role         AdminRole   @default(ADMIN)
-  status       AdminStatus @default(ACTIVE)
-  createdAt    DateTime    @default(now())
+  id                Int         @id @default(autoincrement())
+  fullName          String
+  username          String      @unique
+  email             String      @unique
+  passwordHash      String?     // null until the admin activates their account
+  role              AdminRole   @default(ADMIN)
+  status            AdminStatus @default(ACTIVE)
+  resetToken        String?     @unique
+  resetTokenExpiresAt DateTime?
+  createdAt         DateTime    @default(now())
 
   sessionsCreated       Session[]              @relation("SessionCreatedBy")
   profileChangeRequests ProfileChangeRequest[] @relation("Requester")
