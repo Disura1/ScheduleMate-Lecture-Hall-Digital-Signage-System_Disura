@@ -7,6 +7,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { SubmitRequestDto } from './dto/submit-request.dto';
+import { RejectRequestDto } from './dto/reject-request.dto';
 
 @Controller('admin-accounts')
 export class AdminAccountsController {
@@ -62,5 +64,36 @@ export class AdminAccountsController {
     @CurrentAdmin() admin: { id: number },
   ) {
     return this.adminAccountsService.updateRole(id, role, admin.id);
+  }
+
+  @Post('profile-change-requests')
+  @UseGuards(JwtAuthGuard)
+  submitRequest(@Body() dto: SubmitRequestDto, @CurrentAdmin() admin: { id: number }) {
+    return this.adminAccountsService.submitProfileChangeRequest(admin.id, dto);
+  }
+
+  @Get('profile-change-requests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  getPendingRequests() {
+    return this.adminAccountsService.getPendingRequests();
+  }
+
+  @Patch('profile-change-requests/:id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  approveRequest(@Param('id', ParseIntPipe) id: number, @CurrentAdmin() admin: { id: number }) {
+    return this.adminAccountsService.approveRequest(id, admin.id);
+  }
+
+  @Patch('profile-change-requests/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  rejectRequest(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RejectRequestDto,
+    @CurrentAdmin() admin: { id: number },
+  ) {
+    return this.adminAccountsService.rejectRequest(id, admin.id, dto.rejectionReason);
   }
 }

@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { SubmitRequestDto } from './dto/submit-request.dto';
 
 const ACTIVATION_WINDOW_HOURS = 24;
 
@@ -138,5 +139,64 @@ export class AdminAccountsService {
       data: { role },
       select: { id: true, fullName: true, username: true, email: true, role: true, status: true, createdAt: true },
     });
+  }
+
+  async submitProfileChangeRequest(requesterId: number, dto: SubmitRequestDto) {
+    return this.prisma.profileChangeRequest.create({
+      data: {
+        requesterId,
+        requestedFullName: dto.requestedFullName,
+        requestedEmail: dto.requestedEmail,
+        reason: dto.reason,
+        status: 'PENDING',
+      },
+    });
+  }
+
+  getPendingRequests() {
+    return this.prisma.profileChangeRequest.findMany({
+      where: { status: 'PENDING' },
+      include: { requester: { select: { id: true, fullName: true, username: true, email: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async approveRequest(requestId: number, reviewerId: number) {
+    const request = await this.findRequestOrThrow(requestId);
+
+    // Same email-uniqueness check as a direct edit — a request shouldn't be able to
+    // claim an email another admin already has by the time it's reviewed.
+    const existing = await this.prisma.admin.findUnique({ where: { email: request.requestedEmail } });
+    if (existing && existing.id !== request.requesterId) {
+      throw new ConflictException(`Cannot approve — "${request.requestedEmail}" is now registered to another account.`);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.admin.update({
+        where: { id: request.requesterId },
+        data: { fullName: request.requestedFullName, email: request.requestedEmail },
+      });
+      return tx.profileChangeRequest.update({
+        where: { id: requestId },
+        data: { status: 'APPROVED', reviewerId, reviewedAt: new Date() },
+      });
+    });
+  }
+
+  async rejectRequest(requestId: number, reviewerId: number, rejectionReason?: string) {
+    await this.findRequestOrThrow(requestId);
+    return this.prisma.profileChangeRequest.update({
+      where: { id: requestId },
+      data: { status: 'REJECTED', reviewerId, reviewedAt: new Date(), rejectionReason },
+    });
+  }
+
+  private async findRequestOrThrow(id: number) {
+    const request = await this.prisma.profileChangeRequest.findUnique({ where: { id } });
+    if (!request) throw new NotFoundException(`Request ${id} not found`);
+    if (request.status !== 'PENDING') {
+      throw new ConflictException(`This request has already been ${request.status.toLowerCase()}.`);
+    }
+    return request;
   }
 }
