@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { getSessions, formatDate, formatTime, type SessionItem } from '../api/sessions';
 import { SessionStatusPill } from '../components/SessionStatusPill';
+import { NewSessionModal } from '../components/NewSessionModal';
+import { EditSessionModal } from '../components/EditSessionModal';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<SessionItem | null>(null);
 
   function reload() {
     setLoading(true);
@@ -17,7 +21,7 @@ export function SessionsPage() {
     <div>
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-xl font-bold text-navy">Session Management</h1>
-        <button className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold">
+        <button onClick={() => setShowNewModal(true)} className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold">
           + New Session
         </button>
       </div>
@@ -58,7 +62,7 @@ export function SessionsPage() {
                   <td className="px-4 py-3">{formatTime(s.startTime)}–{formatTime(s.endTime)}</td>
                   <td className="px-4 py-3"><SessionStatusPill status={s.status} /></td>
                   <td className="px-4 py-3 space-x-3">
-                    <SessionActions session={s} />
+                    <SessionActions session={s} onEdit={() => setEditingSession(s)} />
                   </td>
                 </tr>
               ))
@@ -67,18 +71,24 @@ export function SessionsPage() {
         </table>
       </div>
       <p className="text-sm text-status-gray mt-3">Showing {sessions.length} session(s)</p>
+
+      {showNewModal && (
+        <NewSessionModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); }} />
+      )}
+      {editingSession && (
+        <EditSessionModal session={editingSession} onClose={() => setEditingSession(null)} onSaved={() => { setEditingSession(null); reload(); }} />
+      )}
     </div>
   );
 }
 
-function SessionActions({ session }: { session: SessionItem }) {
-  // Action matrix per Addendum 6 — this is the piece we're proving out first
+function SessionActions({ session, onEdit }: { session: SessionItem; onEdit: () => void }) {
   switch (session.status) {
     case 'SCHEDULED':
     case 'RESCHEDULED':
       return (
         <>
-          <button className="text-brand-blue font-semibold">Edit</button>
+          <button onClick={onEdit} className="text-brand-blue font-semibold">Edit</button>
           <button className="text-brand-blue font-semibold">Reschedule</button>
           <button className="text-status-red font-semibold">Cancel</button>
           {session.status === 'RESCHEDULED' && <button className="text-brand-blue font-semibold">View History</button>}
