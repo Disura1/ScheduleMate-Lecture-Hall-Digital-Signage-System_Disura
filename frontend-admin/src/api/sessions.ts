@@ -1,0 +1,69 @@
+import { api } from '../lib/apiClient';
+
+export type SessionStatus = 'SCHEDULED' | 'CANCELLED' | 'RESCHEDULED' | 'COMPLETED' | 'SUPERSEDED';
+
+export interface SessionItem {
+  id: number;
+  roomId: number;
+  moduleId: number;
+  lecturerId: number;
+  originalSessionId: number | null;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  status: SessionStatus;
+  cancellationReason: string | null;
+  rescheduleReason: string | null;
+  room: { id: number; code: string };
+  module: { id: number; code: string; name: string };
+  lecturer: { id: number; name: string };
+}
+
+export interface CreateSessionInput {
+  roomId: number;
+  moduleId: number;
+  lecturerId: number;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+}
+
+function formatTime(isoString: string): string {
+  return isoString.substring(11, 16); // "HH:mm" from the ISO timestamp
+}
+function formatDate(isoString: string): string {
+  return isoString.substring(0, 10); // "YYYY-MM-DD"
+}
+
+export function getSessions(filters: { roomId?: number; status?: string } = {}) {
+  const params = new URLSearchParams();
+  if (filters.roomId) params.set('roomId', String(filters.roomId));
+  if (filters.status) params.set('status', filters.status);
+  return api.get<SessionItem[]>(`/sessions?${params.toString()}`);
+}
+
+export function createSession(data: CreateSessionInput) {
+  return api.post<SessionItem>('/sessions', data);
+}
+
+export function updateSession(id: number, data: Partial<CreateSessionInput>) {
+  return api.patch<SessionItem>(`/sessions/${id}`, data);
+}
+
+export function cancelSession(id: number, reason?: string) {
+  return api.patch<SessionItem>(`/sessions/${id}/cancel`, { reason });
+}
+
+export function reopenSession(id: number) {
+  return api.patch<SessionItem>(`/sessions/${id}/reopen`, {});
+}
+
+export function rescheduleSession(id: number, data: { roomId?: number; sessionDate: string; startTime: string; endTime: string; reason?: string }) {
+  return api.patch<SessionItem>(`/sessions/${id}/reschedule`, data);
+}
+
+export function getSessionHistory(id: number) {
+  return api.get<SessionItem[]>(`/sessions/${id}/history`);
+}
+
+export { formatTime, formatDate };

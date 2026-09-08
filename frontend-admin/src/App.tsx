@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AcademicPage } from './pages/AcademicPage';
 import { StructurePage } from './pages/StructurePage';
+import { SessionsPage } from './pages/SessionsPage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/academic" element={<AcademicPage />} />
               <Route path="/structure" element={<StructurePage />} />
+              <Route path="/sessions" element={<SessionsPage />} />
               {/* more pages will be added here as we build them */}
             </Route>
           </Route>
