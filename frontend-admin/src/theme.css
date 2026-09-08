@@ -1,0 +1,15 @@
+@theme {
+  --color-navy: #12233F;
+  --color-sidebar-navy: #16294A;
+  --color-brand-blue: #1E5FCC;
+  --color-bg: #F4F6F9;
+
+  --color-status-green: #1E9E5A;
+  --color-status-green-bg: #E6F4EA;
+  --color-status-amber: #D98A11;
+  --color-status-amber-bg: #FDF1DC;
+  --color-status-red: #D93025;
+  --color-status-red-bg: #FCE8E6;
+  --color-status-gray: #5A6472;
+  --color-status-gray-bg: #EEF1F5;
+}
