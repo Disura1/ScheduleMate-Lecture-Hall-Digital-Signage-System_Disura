@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getSessions, formatDate, formatTime, type SessionItem } from '../api/sessions';
+import { getSessions, formatDate, formatTime, type SessionItem, reopenSession } from '../api/sessions';
 import { SessionStatusPill } from '../components/SessionStatusPill';
 import { NewSessionModal } from '../components/NewSessionModal';
 import { EditSessionModal } from '../components/EditSessionModal';
+import { ApiError } from '../lib/apiClient';
+import { CancelSessionModal } from '../components/CancelSessionModal';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -10,12 +12,26 @@ export function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingSession, setEditingSession] = useState<SessionItem | null>(null);
+  const [cancellingSession, setCancellingSession] = useState<SessionItem | null>(null);
 
   function reload() {
     setLoading(true);
     getSessions({ status: status || undefined }).then(setSessions).finally(() => setLoading(false));
   }
   useEffect(reload, [status]);
+
+  const [reopenError, setReopenError] = useState<string | null>(null);
+
+  async function handleReopen(session: SessionItem) {
+    if (!confirm(`Reopen ${session.room.code} · ${session.module.code}?`)) return;
+    setReopenError(null);
+    try {
+      await reopenSession(session.id);
+      reload();
+    } catch (err) {
+      setReopenError(err instanceof ApiError ? err.message : 'Something went wrong');
+    }
+  }
 
   return (
     <div>
@@ -62,7 +78,7 @@ export function SessionsPage() {
                   <td className="px-4 py-3">{formatTime(s.startTime)}–{formatTime(s.endTime)}</td>
                   <td className="px-4 py-3"><SessionStatusPill status={s.status} /></td>
                   <td className="px-4 py-3 space-x-3">
-                    <SessionActions session={s} onEdit={() => setEditingSession(s)} />
+                    <SessionActions session={s} onEdit={() => setEditingSession(s)} onCancel={() => setCancellingSession(s)} onReopen={() => handleReopen(s)} />
                   </td>
                 </tr>
               ))
@@ -78,11 +94,20 @@ export function SessionsPage() {
       {editingSession && (
         <EditSessionModal session={editingSession} onClose={() => setEditingSession(null)} onSaved={() => { setEditingSession(null); reload(); }} />
       )}
+      {reopenError && (
+        <div className="fixed bottom-6 right-6 bg-status-red-bg text-status-red text-sm rounded-lg p-4 shadow-lg max-w-sm">
+          {reopenError}
+          <button onClick={() => setReopenError(null)} className="ml-3 font-semibold">Dismiss</button>
+        </div>
+      )}
+      {cancellingSession && (
+        <CancelSessionModal session={cancellingSession} onClose={() => setCancellingSession(null)} onCancelled={() => { setCancellingSession(null); reload(); }} />
+      )}
     </div>
   );
 }
 
-function SessionActions({ session, onEdit }: { session: SessionItem; onEdit: () => void }) {
+function SessionActions({ session, onEdit, onCancel, onReopen }: { session: SessionItem; onEdit: () => void; onCancel: () => void; onReopen: () => void }) {
   switch (session.status) {
     case 'SCHEDULED':
     case 'RESCHEDULED':
@@ -90,12 +115,12 @@ function SessionActions({ session, onEdit }: { session: SessionItem; onEdit: () 
         <>
           <button onClick={onEdit} className="text-brand-blue font-semibold">Edit</button>
           <button className="text-brand-blue font-semibold">Reschedule</button>
-          <button className="text-status-red font-semibold">Cancel</button>
+          <button onClick={onCancel} className="text-status-red font-semibold">Cancel</button>
           {session.status === 'RESCHEDULED' && <button className="text-brand-blue font-semibold">View History</button>}
         </>
       );
     case 'CANCELLED':
-      return <button className="text-status-green font-semibold">Reopen</button>;
+      return <button onClick={onReopen} className="text-status-green font-semibold">Reopen</button>;
     default:
       return <span className="text-gray-300 text-xs">No actions</span>;
   }
