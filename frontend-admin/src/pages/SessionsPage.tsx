@@ -5,6 +5,8 @@ import { NewSessionModal } from '../components/NewSessionModal';
 import { EditSessionModal } from '../components/EditSessionModal';
 import { ApiError } from '../lib/apiClient';
 import { CancelSessionModal } from '../components/CancelSessionModal';
+import { RescheduleSessionModal } from '../components/RescheduleSessionModal';
+import { ViewHistoryModal } from '../components/ViewHistoryModal';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -13,6 +15,8 @@ export function SessionsPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingSession, setEditingSession] = useState<SessionItem | null>(null);
   const [cancellingSession, setCancellingSession] = useState<SessionItem | null>(null);
+  const [reschedulingSession, setReschedulingSession] = useState<SessionItem | null>(null);
+  const [viewingHistoryId, setViewingHistoryId] = useState<number | null>(null);
 
   function reload() {
     setLoading(true);
@@ -78,7 +82,14 @@ export function SessionsPage() {
                   <td className="px-4 py-3">{formatTime(s.startTime)}–{formatTime(s.endTime)}</td>
                   <td className="px-4 py-3"><SessionStatusPill status={s.status} /></td>
                   <td className="px-4 py-3 space-x-3">
-                    <SessionActions session={s} onEdit={() => setEditingSession(s)} onCancel={() => setCancellingSession(s)} onReopen={() => handleReopen(s)} />
+                    <SessionActions
+                      session={s}
+                      onEdit={() => setEditingSession(s)}
+                      onCancel={() => setCancellingSession(s)}
+                      onReopen={() => handleReopen(s)}
+                      onReschedule={() => setReschedulingSession(s)}
+                      onViewHistory={() => setViewingHistoryId(s.id)}
+                    />
                   </td>
                 </tr>
               ))
@@ -103,20 +114,28 @@ export function SessionsPage() {
       {cancellingSession && (
         <CancelSessionModal session={cancellingSession} onClose={() => setCancellingSession(null)} onCancelled={() => { setCancellingSession(null); reload(); }} />
       )}
+      {reschedulingSession && (
+        <RescheduleSessionModal session={reschedulingSession} onClose={() => setReschedulingSession(null)} onRescheduled={() => { setReschedulingSession(null); reload(); }} />
+      )}
+      {viewingHistoryId && (
+        <ViewHistoryModal sessionId={viewingHistoryId} onClose={() => setViewingHistoryId(null)} />
+      )}
     </div>
   );
 }
 
-function SessionActions({ session, onEdit, onCancel, onReopen }: { session: SessionItem; onEdit: () => void; onCancel: () => void; onReopen: () => void }) {
+function SessionActions({ session, onEdit, onCancel, onReopen, onReschedule, onViewHistory }: {
+  session: SessionItem; onEdit: () => void; onCancel: () => void; onReopen: () => void; onReschedule: () => void; onViewHistory: () => void;
+}) {
   switch (session.status) {
     case 'SCHEDULED':
     case 'RESCHEDULED':
       return (
         <>
           <button onClick={onEdit} className="text-brand-blue font-semibold">Edit</button>
-          <button className="text-brand-blue font-semibold">Reschedule</button>
+          <button onClick={onReschedule} className="text-brand-blue font-semibold">Reschedule</button>
           <button onClick={onCancel} className="text-status-red font-semibold">Cancel</button>
-          {session.status === 'RESCHEDULED' && <button className="text-brand-blue font-semibold">View History</button>}
+          {session.status === 'RESCHEDULED' && <button onClick={onViewHistory} className="text-brand-blue font-semibold">View History</button>}
         </>
       );
     case 'CANCELLED':
