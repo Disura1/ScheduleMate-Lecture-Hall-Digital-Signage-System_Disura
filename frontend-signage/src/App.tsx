@@ -10,9 +10,22 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getSlideData()
-      .then(setData)
-      .catch((err) => setError(err.message));
+    function fetchData() {
+      getSlideData()
+        .then((newData) => { setData(newData); setError(null); })
+        .catch((err) => setError(err.message));
+    }
+
+    fetchData(); // initial load
+    const pollInterval = setInterval(fetchData, 60_000); // re-fetch every 60s
+
+    return () => clearInterval(pollInterval);
+  }, []);
+
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const clockInterval = setInterval(() => setNow(new Date()), 1000); // tick every 1s
+    return () => clearInterval(clockInterval);
   }, []);
 
   if (error) {
@@ -38,8 +51,8 @@ function App() {
           {data.location.building} — Floor {data.location.floor} <span className="text-signage-accent-blue">{data.location.side} Side</span>
         </div>
         <div className="text-right">
-          <div className="text-signage-text-dim text-sm mb-1">{new Date(data.currentTime).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-          <div className="text-signage-text text-4xl font-bold">{new Date(data.currentTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</div>
+          <div className="text-signage-text-dim text-sm mb-1">{now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          <div className="text-signage-text text-4xl font-bold">{now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
       </div>
 
