@@ -7,6 +7,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (data: LoginResponse) => void;
   logout: () => void;
+  updateAdmin: (updates: Partial<LoginResponse['admin']>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -29,8 +30,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAdmin(null);
   };
 
+  const updateAdmin = (updates: Partial<LoginResponse['admin']>) => {
+    setAdmin((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      localStorage.setItem('schedulemate_admin', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ admin, isAuthenticated: !!getToken(), login, logout }}>
+    <AuthContext.Provider value={{ admin, isAuthenticated: !!getToken(), login, logout, updateAdmin }}>
       {children}
     </AuthContext.Provider>
   );

@@ -17,7 +17,12 @@ export function AppShell() {
     <div className="min-h-screen bg-bg">
       <div className="h-14 bg-navy flex items-center justify-between px-7 text-white">
         <span className="font-semibold">ScheduleMate — Admin</span>
-        <div className="w-8 h-8 rounded-full bg-sidebar-navy border border-white/20" title={admin?.fullName} />
+        <div
+          className="w-8 h-8 rounded-full bg-sidebar-navy border border-white/20 flex items-center justify-center text-xs font-semibold text-white"
+          title={admin?.fullName}
+        >
+          {getInitials(admin?.fullName)}
+        </div>
       </div>
 
       <div className="flex">
@@ -52,4 +57,12 @@ export function AppShell() {
       </div>
     </div>
   );
+}
+
+function getInitials(fullName?: string): string {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
 }
