@@ -3,10 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { RequestProfileChangeModal } from '../components/RequestProfileChangeModal';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
-import { getAdminAccounts, deactivateAccount, reactivateAccount, type AdminAccount } from '../api/adminAccounts';
+import { getAdminAccounts, deactivateAccount, reactivateAccount, getPendingRequests, type AdminAccount, type PendingRequest } from '../api/adminAccounts';
 import { NewAdminModal } from '../components/NewAdminModal';
 import { EditAdminModal } from '../components/EditAdminModal';
 import { ApiError } from '../lib/apiClient';
+import { ReviewRequestModal } from '../components/ReviewRequestModal';
 
 type Tab = 'profile' | 'accounts' | 'requests';
 
@@ -15,6 +16,12 @@ export function SettingsPage() {
   const [tab, setTab] = useState<Tab>('profile');
   const isSuperAdmin = admin?.role === 'SUPER_ADMIN';
 
+  const [pendingCount, setPendingCount] = useState(0);
+  function refreshPendingCount() {
+    if (isSuperAdmin) getPendingRequests().then((reqs) => setPendingCount(reqs.length));
+  }
+  useEffect(refreshPendingCount, [isSuperAdmin]);
+
   return (
     <div>
       <h1 className="text-xl font-bold text-navy mb-5">Settings</h1>
@@ -22,12 +29,20 @@ export function SettingsPage() {
       <div className="flex gap-1 border-b border-gray-200 mb-4">
         <TabButton active={tab === 'profile'} onClick={() => setTab('profile')}>My Profile</TabButton>
         {isSuperAdmin && <TabButton active={tab === 'accounts'} onClick={() => setTab('accounts')}>Admin Accounts</TabButton>}
-        {isSuperAdmin && <TabButton active={tab === 'requests'} onClick={() => setTab('requests')}>Pending Requests</TabButton>}
+        {isSuperAdmin && (
+          <button
+            onClick={() => setTab('requests')}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 flex items-center gap-1.5 ${tab === 'requests' ? 'text-brand-blue border-brand-blue' : 'text-status-gray border-transparent'}`}
+          >
+            Pending Requests
+            {pendingCount > 0 && <span className="bg-status-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>}
+          </button>
+        )}
       </div>
 
       {tab === 'profile' && <MyProfileTab isSuperAdmin={isSuperAdmin} />}
       {tab === 'accounts' && <AdminAccountsTab />}
-      {tab === 'requests' && <p className="text-status-gray text-sm">Pending Requests — coming next.</p>}
+      {tab === 'requests' && <PendingRequestsTab onResolved={refreshPendingCount} />}
     </div>
   );
 }
@@ -206,6 +221,68 @@ function AdminAccountsTab() {
 
       {showNewModal && <NewAdminModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); }} />}
       {editingAccount && <EditAdminModal target={editingAccount} onClose={() => setEditingAccount(null)} onSaved={() => { setEditingAccount(null); reload(); }} />}
+    </div>
+  );
+}
+
+function PendingRequestsTab({ onResolved }: { onResolved: () => void }) {
+  const [requests, setRequests] = useState<PendingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reviewing, setReviewing] = useState<PendingRequest | null>(null);
+
+  function reload() {
+    setLoading(true);
+    getPendingRequests().then(setRequests).finally(() => setLoading(false));
+  }
+  useEffect(reload, []);
+
+  return (
+    <div>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr className="text-left text-xs font-semibold text-status-gray uppercase">
+              <th className="px-4 py-3">Requested By</th>
+              <th className="px-4 py-3">Current → Requested</th>
+              <th className="px-4 py-3">Reason</th>
+              <th className="px-4 py-3">Submitted</th>
+              <th className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-status-gray">Loading…</td></tr>
+            ) : requests.length === 0 ? (
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-status-gray">No pending requests</td></tr>
+            ) : (
+              requests.map((r) => (
+                <tr key={r.id} className="border-t border-gray-100">
+                  <td className="px-4 py-3">
+                    <div>{r.requester.fullName}</div>
+                    <div className="text-xs text-status-gray">{r.requester.username}</div>
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <div><b>Name:</b> {r.requester.fullName} → <span className="text-brand-blue">{r.requestedFullName}</span></div>
+                    <div><b>Email:</b> {r.requester.email} → <span className="text-brand-blue">{r.requestedEmail}</span></div>
+                  </td>
+                  <td className="px-4 py-3">{r.reason ?? '—'}</td>
+                  <td className="px-4 py-3">{new Date(r.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => setReviewing(r)} className="text-brand-blue font-semibold">Review</button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-status-gray mt-3">
+        Approving applies the requested values immediately — no manual retyping. The requesting admin's current details stay active and unchanged until then.
+      </p>
+
+      {reviewing && (
+        <ReviewRequestModal request={reviewing} onClose={() => setReviewing(null)} onResolved={() => { setReviewing(null); reload(); onResolved(); }} />
+      )}
     </div>
   );
 }
