@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { getSlideData, type SlideData } from './api/signage';
-
-function formatTime(isoString: string): string {
-  return isoString.substring(11, 16);
-}
+import { SignageHeader } from './components/SignageHeader';
+import { SlideDots } from './components/SlideDots';
+import { OngoingSlide } from './slides/OngoingSlide';
+import { UpcomingSlide } from './slides/UpcomingSlide';
+import { CancelledSlide } from './slides/CancelledSlide';
+import { RescheduledSlide } from './slides/RescheduledSlide';
 
 function App() {
   const [data, setData] = useState<SlideData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     function fetchData() {
@@ -15,70 +18,32 @@ function App() {
         .then((newData) => { setData(newData); setError(null); })
         .catch((err) => setError(err.message));
     }
-
-    fetchData(); // initial load
-    const pollInterval = setInterval(fetchData, 60_000); // re-fetch every 60s
-
+    fetchData();
+    const pollInterval = setInterval(fetchData, 60_000);
     return () => clearInterval(pollInterval);
   }, []);
 
-  const [now, setNow] = useState(new Date());
   useEffect(() => {
-    const clockInterval = setInterval(() => setNow(new Date()), 1000); // tick every 1s
+    const clockInterval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(clockInterval);
   }, []);
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-signage-bg flex items-center justify-center">
-        <p className="text-signage-red">Error: {error}</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-signage-bg flex items-center justify-center"><p className="text-signage-red">Error: {error}</p></div>;
   }
-
   if (!data) {
-    return (
-      <div className="min-h-screen bg-signage-bg flex items-center justify-center">
-        <p className="text-signage-text-dim">Loading…</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-signage-bg flex items-center justify-center"><p className="text-signage-text-dim">Loading…</p></div>;
   }
 
+  // Temporary: showing all four stacked, just to verify each one renders correctly — Stage 4 replaces this with rotation
   return (
-    <div className="min-h-screen bg-signage-bg">
-      <div className="h-32 bg-signage-header flex items-center justify-between px-12 border-b-2 border-signage-border-blue">
-        <div className="text-signage-text text-3xl font-bold">
-          {data.location.building} — Floor {data.location.floor} <span className="text-signage-accent-blue">{data.location.side} Side</span>
-        </div>
-        <div className="text-right">
-          <div className="text-signage-text-dim text-sm mb-1">{now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-          <div className="text-signage-text text-4xl font-bold">{now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      </div>
-
-      <div className="px-12 pt-8">
-        <h1 className="text-signage-text text-3xl font-bold mb-5">
-          Ongoing <span className="text-signage-green">Lectures / Labs</span>
-        </h1>
-
-        <div className="grid grid-cols-3 gap-7">
-          {data.ongoing.length === 0 ? (
-            <p className="text-signage-text-faint text-lg">No ongoing sessions right now.</p>
-          ) : (
-            data.ongoing.map((s) => (
-              <div key={s.id} className="bg-signage-card rounded-2xl p-7 border-l-4 border-signage-green">
-                <div className="bg-signage-green-bg text-signage-green text-xs font-bold px-3 py-1.5 rounded-full inline-block mb-4">
-                  ONGOING NOW
-                </div>
-                <div className="text-signage-text text-2xl font-bold mb-1">{s.room.code}</div>
-                <div className="text-signage-text-dim text-base mb-4">{s.module.code} — {s.module.name}</div>
-                <div className="text-signage-text-dim text-sm mb-2"><b className="text-signage-text">{formatTime(s.startTime)} – {formatTime(s.endTime)}</b></div>
-                <div className="text-signage-text-dim text-sm">Lecturer: <b className="text-signage-text">{s.lecturer.name}</b></div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+    <div className="min-h-screen bg-signage-bg pb-8">
+      <SignageHeader location={data.location} now={now} />
+      <OngoingSlide sessions={data.ongoing} />
+      <UpcomingSlide sessions={data.upcoming} now={now} />
+      <CancelledSlide sessions={data.cancelled} />
+      <RescheduledSlide sessions={data.rescheduled} />
+      <SlideDots activeIndex={0} />
     </div>
   );
 }
