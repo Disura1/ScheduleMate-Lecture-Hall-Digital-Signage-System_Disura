@@ -1,0 +1,23 @@
+@theme {
+  --color-signage-bg: #0B1220;
+  --color-signage-header: #0F1B33;
+  --color-signage-card: #141F38;
+  --color-signage-accent-blue: #7FA8F5;
+  --color-signage-border-blue: #1E5FCC;
+
+  --color-signage-text: #ffffff;
+  --color-signage-text-dim: #9AB0D9;
+  --color-signage-text-faint: #5A6E93;
+  --color-signage-text-faintest: #7285A8;
+
+  --color-signage-green: #63D28C;
+  --color-signage-green-bg: rgba(99, 210, 140, 0.15);
+  --color-signage-blue: #5B9BF5;
+  --color-signage-blue-bg: rgba(91, 155, 245, 0.15);
+  --color-signage-red: #F17075;
+  --color-signage-red-bg: rgba(229, 72, 77, 0.15);
+  --color-signage-amber: #E8A33D;
+  --color-signage-amber-bg: rgba(232, 163, 61, 0.15);
+
+  --color-signage-dot-inactive: #2A3B5C;
+}
