@@ -10,6 +10,7 @@ export function DashboardPage() {
   const [search, setSearch] = useState('');
   const [rooms, setRooms] = useState<RoomStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     getBuildings().then(setBuildings);
@@ -22,10 +23,11 @@ export function DashboardPage() {
       floorId: floorId || undefined,
       sideId: sideId || undefined,
       search: search || undefined,
+      status: statusFilter || undefined,
     })
       .then(setRooms)
       .finally(() => setLoading(false));
-  }, [buildingId, floorId, sideId, search]);
+  }, [buildingId, floorId, sideId, search, statusFilter]);
 
   const selectedBuilding = buildings.find((b) => b.id === buildingId);
   const floors = selectedBuilding?.floors ?? [];
@@ -50,7 +52,7 @@ export function DashboardPage() {
         <SummaryCard label="Temporarily Unavailable" value={counts.TEMPORARILY_UNAVAILABLE} accent="border-status-red" />
       </div>
 
-      <div className="flex gap-2.5 mb-4">
+      <div className="flex gap-2.5 mb-4 items-center">
         <select
           className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white"
           value={buildingId}
@@ -93,12 +95,39 @@ export function DashboardPage() {
           ))}
         </select>
 
-        <input
-          className="h-9 border border-gray-200 rounded-lg px-3 text-sm flex-1 max-w-70"
-          placeholder="Search by module or lecturer..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">Status: All</option>
+          <option value="ONGOING_NOW">Ongoing Now</option>
+          <option value="AVAILABLE">Available</option>
+          <option value="UPCOMING_SOON">Upcoming Soon</option>
+          <option value="TEMPORARILY_UNAVAILABLE">Temporarily Unavailable</option>
+        </select>
+
+        <div className="relative flex-1 max-w-70">
+          <input
+            className="w-full h-9 border border-gray-200 rounded-lg pl-3 pr-8 text-sm"
+            placeholder="Search by module or lecturer..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-status-gray text-sm"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        
+        {(buildingId || floorId || sideId || search || statusFilter) && (
+          <button
+            onClick={() => { setBuildingId(''); setFloorId(''); setSideId(''); setSearch(''); setStatusFilter(''); }}
+            className="text-sm text-brand-blue font-semibold"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -125,7 +154,12 @@ export function DashboardPage() {
                   </td>
                   <td className="px-4 py-3"><StatusPill status={r.status} /></td>
                   <td className="px-4 py-3">
-                    {r.currentSession ? `${r.currentSession.module.code} — ${r.currentSession.module.name}` : '—'}
+                    {r.currentSession ? (
+                      <div>
+                        <div>{r.currentSession.module.code} — {r.currentSession.module.name}</div>
+                        <div className="text-xs text-status-gray">Lecturer: {r.currentSession.lecturer.name}</div>
+                      </div>
+                    ) : '—'}
                   </td>
                 </tr>
               ))

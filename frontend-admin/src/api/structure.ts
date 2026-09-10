@@ -47,12 +47,13 @@ export function getBuildings() {
   return api.get<Building[]>('/structure/buildings');
 }
 
-export function getRoomStatus(filters: { buildingId?: number; floorId?: number; sideId?: number; search?: string }) {
+export function getRoomStatus(filters: { buildingId?: number; floorId?: number; sideId?: number; search?: string; status?: string }) {
   const params = new URLSearchParams();
   if (filters.buildingId) params.set('buildingId', String(filters.buildingId));
   if (filters.floorId) params.set('floorId', String(filters.floorId));
   if (filters.sideId) params.set('sideId', String(filters.sideId));
   if (filters.search) params.set('search', filters.search);
+  if (filters.status) params.set('status', filters.status);
   return api.get<RoomStatus[]>(`/structure/rooms/status?${params.toString()}`);
 }
 
