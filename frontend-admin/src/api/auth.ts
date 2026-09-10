@@ -18,3 +18,7 @@ export function login(username: string, password: string) {
 export function changePassword(currentPassword: string, newPassword: string) {
   return api.patch<{ message: string }>('/auth/change-password', { currentPassword, newPassword });
 }
+
+export function activateAccount(token: string, password: string) {
+  return api.post<{ message: string }>('/admin-accounts/activate', { token, password });
+}

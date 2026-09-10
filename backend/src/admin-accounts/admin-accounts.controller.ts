@@ -24,8 +24,10 @@ export class AdminAccountsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
-  create(@Body() dto: CreateAdminDto) {
-    return this.adminAccountsService.create(dto);
+  async create(@Body() dto: CreateAdminDto, @CurrentAdmin() admin: { id: number }) {
+    const inviter = await this.adminAccountsService.findAll();
+    const inviterName = inviter.find((a) => a.id === admin.id)?.fullName ?? 'A Super Admin';
+    return this.adminAccountsService.create(dto, inviterName);
   }
 
   // Deliberately public/unauthenticated — this is what the invited admin clicks before they can log in at all

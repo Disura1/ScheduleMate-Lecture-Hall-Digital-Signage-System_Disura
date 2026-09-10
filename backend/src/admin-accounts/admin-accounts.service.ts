@@ -5,14 +5,18 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { SubmitRequestDto } from './dto/submit-request.dto';
+import { EmailService } from '../email/email.service';
 
 const ACTIVATION_WINDOW_HOURS = 24;
 
 @Injectable()
 export class AdminAccountsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
-  async create(dto: CreateAdminDto) {
+  async create(dto: CreateAdminDto, invitedByName: string) {
     const existingUsername = await this.prisma.admin.findUnique({ where: { username: dto.username } });
     if (existingUsername) {
       throw new ConflictException(`Username "${dto.username}" is already taken`);
@@ -37,10 +41,10 @@ export class AdminAccountsService {
       },
     });
 
-    // NOTE: in a real deployment this token would be emailed, never returned in the API response.
-    // For local dev/testing without an email service configured, we return it directly — this is a
-    // deliberate, documented placeholder (see README), not a production security practice.
-    return { admin, activationLink: `http://localhost:5173/activate?token=${resetToken}` };
+    const activationLink = `${process.env.FRONTEND_ADMIN_URL}/activate?token=${resetToken}`;
+    await this.emailService.sendActivationEmail(admin.email, admin.fullName, activationLink, invitedByName);
+
+    return { admin };
   }
 
   async activate(token: string, password: string) {

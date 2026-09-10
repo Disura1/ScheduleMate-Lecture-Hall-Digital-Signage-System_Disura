@@ -8,7 +8,7 @@ export function NewAdminModal({ onClose, onCreated }: { onClose: () => void; onC
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'ADMIN' | 'SUPER_ADMIN'>('ADMIN');
-  const [activationLink, setActivationLink] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -16,8 +16,8 @@ export function NewAdminModal({ onClose, onCreated }: { onClose: () => void; onC
     setError(null);
     setSaving(true);
     try {
-      const result = await createAdminAccount({ fullName, username, email, role });
-      setActivationLink(result.activationLink);
+      await createAdminAccount({ fullName, username, email, role });
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
     } finally {
@@ -25,13 +25,12 @@ export function NewAdminModal({ onClose, onCreated }: { onClose: () => void; onC
     }
   }
 
-  if (activationLink) {
+  if (success) {
     return (
       <Modal title="Admin Account Created" onClose={onCreated}>
-        <p className="text-sm text-status-gray mb-3">
-          In a real deployment this would be emailed automatically. For now, share this activation link with {fullName}:
+        <p className="text-sm text-status-gray mb-4">
+          An activation email has been sent to <b>{email}</b>. {fullName} needs to click the link in that email to set their password and activate their account.
         </p>
-        <div className="bg-status-gray-bg rounded-lg p-3 text-xs break-all mb-4 select-all">{activationLink}</div>
         <button onClick={onCreated} className="w-full h-10 bg-brand-blue text-white rounded-lg text-sm font-semibold">Done</button>
       </Modal>
     );

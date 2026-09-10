@@ -9,6 +9,7 @@ import { StructurePage } from './pages/StructurePage';
 import { SessionsPage } from './pages/SessionsPage';
 import { DisplaysPage } from './pages/DisplaysPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ActivateAccountPage } from './pages/ActivateAccountPage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/activate" element={<ActivateAccountPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
