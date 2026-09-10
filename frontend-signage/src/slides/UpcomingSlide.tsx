@@ -11,7 +11,7 @@ function startsInLabel(minutes: number): string {
 
 export function UpcomingSlide({ sessions, now }: { sessions: SessionData[]; now: Date }) {
   return (
-    <div className="px-12 pt-8">
+    <div className="px-12 w-full">
       <h1 className="text-signage-text text-3xl font-bold mb-5">
         Upcoming <span className="text-signage-blue">Lectures / Labs</span>
       </h1>

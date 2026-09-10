@@ -66,14 +66,16 @@ function App() {
   const currentKind = availableSlides[activeSlide];
 
   return (
-    <div className="min-h-screen bg-signage-bg pb-8">
+    <div className="h-screen bg-signage-bg flex flex-col overflow-hidden">
       <SignageHeader location={data.location} now={now} />
-
-      {currentKind === 'ongoing' && <OngoingSlide sessions={data.ongoing} />}
-      {currentKind === 'upcoming' && <UpcomingSlide sessions={data.upcoming} now={now} />}
-      {currentKind === 'cancelled' && <CancelledSlide sessions={data.cancelled} />}
-      {currentKind === 'rescheduled' && <RescheduledSlide sessions={data.rescheduled} />}
-
+      
+      <div className="flex-1 flex items-center justify-center overflow-hidden">
+        {currentKind === 'ongoing' && <OngoingSlide sessions={data.ongoing} />}
+        {currentKind === 'upcoming' && <UpcomingSlide sessions={data.upcoming} now={now} />}
+        {currentKind === 'cancelled' && <CancelledSlide sessions={data.cancelled} />}
+        {currentKind === 'rescheduled' && <RescheduledSlide sessions={data.rescheduled} />}
+      </div>
+      
       <SlideDots activeIndex={activeSlide} />
     </div>
   );

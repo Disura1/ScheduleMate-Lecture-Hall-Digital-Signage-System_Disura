@@ -4,7 +4,7 @@ import { EmptySlideCard } from '../components/EmptySlideCard';
 
 export function CancelledSlide({ sessions }: { sessions: SessionData[] }) {
   return (
-    <div className="px-12 pt-8">
+    <div className="px-12 w-full">
       <h1 className="text-signage-text text-3xl font-bold mb-5">
         Cancelled <span className="text-signage-red">Lectures / Labs</span>
       </h1>
