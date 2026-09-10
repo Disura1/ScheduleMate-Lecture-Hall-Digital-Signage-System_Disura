@@ -22,3 +22,11 @@ export function changePassword(currentPassword: string, newPassword: string) {
 export function activateAccount(token: string, password: string) {
   return api.post<{ message: string }>('/admin-accounts/activate', { token, password });
 }
+
+export function forgotPassword(email: string) {
+  return api.post<{ message: string }>('/auth/forgot-password', { email });
+}
+
+export function resetPassword(token: string, newPassword: string) {
+  return api.post<{ message: string }>('/auth/reset-password', { token, newPassword });
+}

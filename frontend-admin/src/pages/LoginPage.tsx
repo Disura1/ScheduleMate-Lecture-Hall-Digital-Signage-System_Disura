@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/apiClient';
@@ -69,13 +69,17 @@ export function LoginPage() {
 
           {error && <p className="text-status-red text-sm text-center mb-4">{error}</p>}
 
-          <button
+                    <button
             type="submit"
             disabled={loading}
             className="w-full h-11 bg-brand-blue text-white rounded-lg font-semibold disabled:opacity-60"
           >
             {loading ? 'Logging in…' : 'Log In'}
           </button>
+
+          <div className="text-center mt-4">
+            <Link to="/forgot-password" className="text-brand-blue text-sm font-semibold">Forgot password?</Link>
+          </div>
         </form>
       </div>
     </div>

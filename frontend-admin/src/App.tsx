@@ -10,6 +10,8 @@ import { SessionsPage } from './pages/SessionsPage';
 import { DisplaysPage } from './pages/DisplaysPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ActivateAccountPage } from './pages/ActivateAccountPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
