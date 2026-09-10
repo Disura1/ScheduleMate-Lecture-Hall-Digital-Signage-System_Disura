@@ -3,11 +3,11 @@ import { getSessions, formatDate, formatTime, type SessionItem, reopenSession } 
 import { SessionStatusPill } from '../components/SessionStatusPill';
 import { NewSessionModal } from '../components/NewSessionModal';
 import { EditSessionModal } from '../components/EditSessionModal';
-import { ApiError } from '../lib/apiClient';
 import { CancelSessionModal } from '../components/CancelSessionModal';
 import { RescheduleSessionModal } from '../components/RescheduleSessionModal';
 import { ViewHistoryModal } from '../components/ViewHistoryModal';
 import { TableCard } from '../components/TableCard';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -18,6 +18,7 @@ export function SessionsPage() {
   const [cancellingSession, setCancellingSession] = useState<SessionItem | null>(null);
   const [reschedulingSession, setReschedulingSession] = useState<SessionItem | null>(null);
   const [viewingHistoryId, setViewingHistoryId] = useState<number | null>(null);
+  const [reopeningSession, setReopeningSession] = useState<SessionItem | null>(null);
 
   function reload() {
     setLoading(true);
@@ -26,17 +27,6 @@ export function SessionsPage() {
   useEffect(reload, [status]);
 
   const [reopenError, setReopenError] = useState<string | null>(null);
-
-  async function handleReopen(session: SessionItem) {
-    if (!confirm(`Reopen ${session.room.code} · ${session.module.code}?`)) return;
-    setReopenError(null);
-    try {
-      await reopenSession(session.id);
-      reload();
-    } catch (err) {
-      setReopenError(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
 
   return (
     <div className="h-full flex flex-col">
@@ -93,7 +83,7 @@ export function SessionsPage() {
                       session={s}
                       onEdit={() => setEditingSession(s)}
                       onCancel={() => setCancellingSession(s)}
-                      onReopen={() => handleReopen(s)}
+                      onReopen={() => setReopeningSession(s)}
                       onReschedule={() => setReschedulingSession(s)}
                       onViewHistory={() => setViewingHistoryId(s.id)}
                     />
@@ -126,6 +116,17 @@ export function SessionsPage() {
       )}
       {viewingHistoryId && (
         <ViewHistoryModal sessionId={viewingHistoryId} onClose={() => setViewingHistoryId(null)} />
+      )}
+      {reopeningSession && (
+        <ConfirmModal
+          title="Reopen this session?"
+          subtitle={`${reopeningSession.room.code} · ${reopeningSession.module.code} · ${formatDate(reopeningSession.sessionDate)}, ${formatTime(reopeningSession.startTime)}–${formatTime(reopeningSession.endTime)}`}
+          bodyText="This sets the session back to Scheduled. The system re-checks the room for conflicts before reopening."
+          confirmLabel="Reopen Session"
+          danger={false}
+          onClose={() => setReopeningSession(null)}
+          onConfirm={async () => { await reopenSession(reopeningSession.id); setReopeningSession(null); reload(); }}
+        />
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { DisplayStatusPill, formatLastSeen } from '../components/DisplayStatusPi
 import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
 import { TableCard } from '../components/TableCard';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export function DisplaysPage() {
   const [displays, setDisplays] = useState<DisplayItem[]>([]);
@@ -12,6 +13,7 @@ export function DisplaysPage() {
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
   const [reassigningDisplay, setReassigningDisplay] = useState<DisplayItem | null>(null);
+  const [removingDisplay, setRemovingDisplay] = useState<DisplayItem | null>(null);
 
   function reload() {
     setLoading(true);
@@ -21,16 +23,6 @@ export function DisplaysPage() {
     reload();
     getBuildings().then(setBuildings);
   }, []);
-
-  async function handleRemove(id: number) {
-    if (!confirm('Remove this display? The physical device will stop being able to fetch signage data.')) return;
-    try {
-      await removeDisplay(id);
-      reload();
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
 
   return (
     <div className="h-full flex flex-col">
@@ -68,7 +60,7 @@ export function DisplaysPage() {
                   <td className="px-4 py-3"><DisplayStatusPill lastSeenAt={d.lastSeenAt} /></td>
                   <td className="px-4 py-3 space-x-3">
                     <button onClick={() => setReassigningDisplay(d)} className="text-brand-blue font-semibold">Reassign</button>
-                    <button onClick={() => handleRemove(d.id)} className="text-status-red font-semibold">Remove</button>
+                    <button onClick={() => setRemovingDisplay(d)} className="text-status-red font-semibold">Remove</button>
                   </td>
                 </tr>
               ))
@@ -85,6 +77,16 @@ export function DisplaysPage() {
       )}
       {reassigningDisplay && (
         <ReassignDisplayModal display={reassigningDisplay} buildings={buildings} onClose={() => setReassigningDisplay(null)} onSaved={() => { setReassigningDisplay(null); reload(); }} />
+      )}
+      {removingDisplay && (
+        <ConfirmModal
+          title="Remove this display?"
+          subtitle={removingDisplay.deviceIdentifier}
+          bodyText="The physical device will stop being able to fetch signage data. This does not affect any sessions."
+          confirmLabel="Remove Display"
+          onClose={() => setRemovingDisplay(null)}
+          onConfirm={async () => { await removeDisplay(removingDisplay.id); setRemovingDisplay(null); reload(); }}
+        />
       )}
     </div>
   );

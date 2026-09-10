@@ -16,7 +16,7 @@ export function ViewHistoryModal({ sessionId, onClose }: { sessionId: number; on
       {loading ? (
         <p className="text-status-gray text-sm">Loading…</p>
       ) : (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 max-h-96 overflow-y-auto pr-1">
           {chain.map((s, i) => (
             <div key={s.id}>
               <div className={`rounded-lg p-3 ${s.status === 'SUPERSEDED' ? 'bg-gray-50' : 'bg-status-green-bg'}`}>

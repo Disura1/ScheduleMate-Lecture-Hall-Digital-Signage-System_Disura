@@ -9,6 +9,7 @@ import { EditAdminModal } from '../components/EditAdminModal';
 import { ApiError } from '../lib/apiClient';
 import { ReviewRequestModal } from '../components/ReviewRequestModal';
 import { TableCard } from '../components/TableCard';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 type Tab = 'profile' | 'accounts' | 'requests';
 
@@ -124,22 +125,13 @@ function AdminAccountsTab() {
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
+  const [deactivatingAccount, setDeactivatingAccount] = useState<AdminAccount | null>(null);
 
   function reload() {
     setLoading(true);
     getAdminAccounts().then(setAccounts).finally(() => setLoading(false));
   }
   useEffect(reload, []);
-
-  async function handleDeactivate(id: number) {
-    if (!confirm('Deactivate this admin account? This blocks login immediately.')) return;
-    try {
-      await deactivateAccount(id);
-      reload();
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
 
   async function handleReactivate(id: number) {
     try {
@@ -202,7 +194,7 @@ function AdminAccountsTab() {
                         <>
                           <button onClick={() => setEditingAccount(a)} className="text-brand-blue font-semibold">Edit</button>
                           {a.status === 'ACTIVE' ? (
-                            <button onClick={() => handleDeactivate(a.id)} className="text-status-red font-semibold">Deactivate</button>
+                            <button onClick={() => setDeactivatingAccount(a)} className="text-status-red font-semibold">Deactivate</button>
                           ) : (
                             <button onClick={() => handleReactivate(a.id)} className="text-status-green font-semibold">Activate</button>
                           )}
@@ -222,6 +214,16 @@ function AdminAccountsTab() {
 
       {showNewModal && <NewAdminModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); }} />}
       {editingAccount && <EditAdminModal target={editingAccount} onClose={() => setEditingAccount(null)} onSaved={() => { setEditingAccount(null); reload(); }} />}
+      {deactivatingAccount && (
+        <ConfirmModal
+          title="Deactivate this admin account?"
+          subtitle={`${deactivatingAccount.fullName} (${deactivatingAccount.username})`}
+          bodyText="This blocks login immediately but preserves their history for accountability."
+          confirmLabel="Deactivate Account"
+          onClose={() => setDeactivatingAccount(null)}
+          onConfirm={async () => { await deactivateAccount(deactivatingAccount.id); setDeactivatingAccount(null); reload(); }}
+        />
+      )}
     </div>
   );
 }
