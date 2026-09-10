@@ -7,12 +7,18 @@ import {
 import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
 import { TableCard } from '../components/TableCard';
+import { updateModule, updateLecturer } from '../api/academic';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export function AcademicPage() {
   const [tab, setTab] = useState<'modules' | 'lecturers'>('modules');
   const [modules, setModules] = useState<ModuleItem[]>([]);
   const [lecturers, setLecturers] = useState<LecturerItem[]>([]);
-  const [showNewModal, setShowNewModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingModule, setEditingModule] = useState<ModuleItem | null>(null);
+  const [editingLecturer, setEditingLecturer] = useState<LecturerItem | null>(null);
+  const [deletingModule, setDeletingModule] = useState<ModuleItem | null>(null);
+  const [deletingLecturer, setDeletingLecturer] = useState<LecturerItem | null>(null);
 
   function reload() {
     getModules().then(setModules);
@@ -20,30 +26,12 @@ export function AcademicPage() {
   }
   useEffect(reload, []);
 
-  async function handleDeleteModule(id: number) {
-    try {
-      await deleteModule(id);
-      reload();
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
-
-  async function handleDeleteLecturer(id: number) {
-    try {
-      await deleteLecturer(id);
-      reload();
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
-
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-xl font-bold text-navy">Modules & Lecturers</h1>
         <button
-          onClick={() => setShowNewModal(true)}
+          onClick={() => setShowFormModal(true)}
           className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold"
         >
           + New {tab === 'modules' ? 'Module' : 'Lecturer'}
@@ -74,7 +62,8 @@ export function AcademicPage() {
                     <td className="px-4 py-3">{m.name}</td>
                     <td className="px-4 py-3">{m._count.sessions}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => handleDeleteModule(m.id)} className="text-status-red font-semibold">Delete</button>
+                      <button onClick={() => setEditingModule(m)} className="text-brand-blue font-semibold mr-3">Edit</button>
+                      <button onClick={() => setDeletingModule(m)} className="text-status-red font-semibold">Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -97,7 +86,8 @@ export function AcademicPage() {
                     <td className="px-4 py-3">{l.email}</td>
                     <td className="px-4 py-3">{l._count.sessions}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => handleDeleteLecturer(l.id)} className="text-status-red font-semibold">Delete</button>
+                      <button onClick={() => setEditingLecturer(l)} className="text-brand-blue font-semibold mr-3">Edit</button>
+                      <button onClick={() => setDeletingLecturer(l)} className="text-status-red font-semibold">Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -107,11 +97,31 @@ export function AcademicPage() {
         </table>
       </TableCard>
 
-      {showNewModal && (
-        <NewItemModal
-          kind={tab}
-          onClose={() => setShowNewModal(false)}
-          onCreated={() => { setShowNewModal(false); reload(); }}
+      {showFormModal && (
+        <ItemFormModal kind={tab} onClose={() => setShowFormModal(false)} onSaved={() => { setShowFormModal(false); reload(); }} />
+      )}
+      {editingModule && (
+        <ItemFormModal kind="modules" existingModule={editingModule} onClose={() => setEditingModule(null)} onSaved={() => { setEditingModule(null); reload(); }} />
+      )}
+      {editingLecturer && (
+        <ItemFormModal kind="lecturers" existingLecturer={editingLecturer} onClose={() => setEditingLecturer(null)} onSaved={() => { setEditingLecturer(null); reload(); }} />
+      )}
+      {deletingModule && (
+        <ConfirmModal
+          title="Delete this module?"
+          subtitle={`${deletingModule.code} — ${deletingModule.name}`}
+          confirmLabel="Delete Module"
+          onClose={() => setDeletingModule(null)}
+          onConfirm={async () => { await deleteModule(deletingModule.id); setDeletingModule(null); reload(); }}
+        />
+      )}
+      {deletingLecturer && (
+        <ConfirmModal
+          title="Delete this lecturer?"
+          subtitle={deletingLecturer.name}
+          confirmLabel="Delete Lecturer"
+          onClose={() => setDeletingLecturer(null)}
+          onConfirm={async () => { await deleteLecturer(deletingLecturer.id); setDeletingLecturer(null); reload(); }}
         />
       )}
     </div>
@@ -131,9 +141,18 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function NewItemModal({ kind, onClose, onCreated }: { kind: 'modules' | 'lecturers'; onClose: () => void; onCreated: () => void }) {
-  const [field1, setField1] = useState('');
-  const [field2, setField2] = useState('');
+function ItemFormModal({
+  kind, existingModule, existingLecturer, onClose, onSaved,
+}: {
+  kind: 'modules' | 'lecturers';
+  existingModule?: ModuleItem;
+  existingLecturer?: LecturerItem;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = !!(existingModule || existingLecturer);
+  const [field1, setField1] = useState(existingModule?.code ?? existingLecturer?.name ?? '');
+  const [field2, setField2] = useState(existingModule?.name ?? existingLecturer?.email ?? '');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -142,11 +161,13 @@ function NewItemModal({ kind, onClose, onCreated }: { kind: 'modules' | 'lecture
     setSaving(true);
     try {
       if (kind === 'modules') {
-        await createModule({ code: field1, name: field2 });
+        if (isEdit && existingModule) await updateModule(existingModule.id, { code: field1, name: field2 });
+        else await createModule({ code: field1, name: field2 });
       } else {
-        await createLecturer({ name: field1, email: field2 });
+        if (isEdit && existingLecturer) await updateLecturer(existingLecturer.id, { name: field1, email: field2 });
+        else await createLecturer({ name: field1, email: field2 });
       }
-      onCreated();
+      onSaved();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
     } finally {
@@ -154,15 +175,19 @@ function NewItemModal({ kind, onClose, onCreated }: { kind: 'modules' | 'lecture
     }
   }
 
+  const title = isEdit
+    ? `Edit ${kind === 'modules' ? 'Module' : 'Lecturer'}`
+    : `New ${kind === 'modules' ? 'Module' : 'Lecturer'}`;
+
   return (
-    <Modal title={kind === 'modules' ? 'New Module' : 'New Lecturer'} onClose={onClose}>
+    <Modal title={title} onClose={onClose}>
       <label className="text-sm font-semibold text-navy block mb-1">{kind === 'modules' ? 'Module Code' : 'Full Name'}</label>
       <input className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-3 text-sm" value={field1} onChange={(e) => setField1(e.target.value)} />
 
       <label className="text-sm font-semibold text-navy block mb-1">{kind === 'modules' ? 'Module Name' : 'Email'}</label>
       <input className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-4 text-sm" value={field2} onChange={(e) => setField2(e.target.value)} />
 
-      {error && <p className="text-status-red text-sm mb-3">{error}</p>}
+      {error && <div className="bg-status-red-bg text-status-red text-sm rounded-lg p-3 mb-4">{error}</div>}
 
       <div className="flex gap-2.5">
         <button onClick={onClose} className="flex-1 h-10 border border-gray-200 rounded-lg text-sm font-semibold">Cancel</button>
