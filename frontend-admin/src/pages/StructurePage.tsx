@@ -98,6 +98,12 @@ export function StructurePage() {
           <option value="">Side: All</option>
           {sides.map((s) => <option key={s.id} value={s.id}>Side {s.sideCode}</option>)}
         </select>
+
+        {(floorId || sideId) && (
+          <button onClick={() => { setFloorId(''); setSideId(''); }} className="text-sm text-brand-blue font-semibold">
+            Clear Filters
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">

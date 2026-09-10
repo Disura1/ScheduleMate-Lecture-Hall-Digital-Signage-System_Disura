@@ -54,6 +54,12 @@ export function SessionsPage() {
           <option value="CANCELLED">Cancelled</option>
           <option value="COMPLETED">Completed</option>
         </select>
+
+        {status && (
+          <button onClick={() => setStatus('')} className="text-sm text-brand-blue font-semibold">
+            Clear Filter
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">

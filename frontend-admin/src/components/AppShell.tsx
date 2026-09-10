@@ -43,12 +43,14 @@ export function AppShell() {
             ))}
           </div>
 
-          <button
-            onClick={logout}
-            className="text-left px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/5 border-t border-white/10 mt-2 pt-4"
-          >
-            Logout
-          </button>
+          <div className="border-t border-white/10 mt-2 pt-2">
+            <button
+              onClick={logout}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-status-red/10 hover:text-status-red transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </nav>
 
         <main className="flex-1 p-7">
