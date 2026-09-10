@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getBuildings, getRoomStatus, type Building, type RoomStatus } from '../api/structure';
 import { StatusPill } from '../components/StatusPill';
+import { TableCard } from '../components/TableCard';
 
 export function DashboardPage() {
   const [buildings, setBuildings] = useState<Building[]>([]);
@@ -42,7 +43,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <h1 className="text-xl font-bold text-navy mb-5">Live Room Status Dashboard</h1>
 
       <div className="grid grid-cols-4 gap-4 mb-6">
@@ -130,9 +131,9 @@ export function DashboardPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <TableCard>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Building / Floor / Side</th>
@@ -166,7 +167,7 @@ export function DashboardPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </TableCard>
 
       <p className="text-sm text-status-gray mt-3">Showing {rooms.length} room(s)</p>
     </div>

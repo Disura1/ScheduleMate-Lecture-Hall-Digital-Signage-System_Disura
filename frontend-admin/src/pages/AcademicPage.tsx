@@ -6,6 +6,7 @@ import {
 } from '../api/academic';
 import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
+import { TableCard } from '../components/TableCard';
 
 export function AcademicPage() {
   const [tab, setTab] = useState<'modules' | 'lecturers'>('modules');
@@ -38,7 +39,7 @@ export function AcademicPage() {
   }
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-xl font-bold text-navy">Modules & Lecturers</h1>
         <button
@@ -54,11 +55,11 @@ export function AcademicPage() {
         <TabButton active={tab === 'lecturers'} onClick={() => setTab('lecturers')}>Lecturers</TabButton>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <TableCard>
         <table className="w-full text-sm">
           {tab === 'modules' ? (
             <>
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr className="text-left text-xs font-semibold text-status-gray uppercase">
                   <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">Name</th>
@@ -81,7 +82,7 @@ export function AcademicPage() {
             </>
           ) : (
             <>
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr className="text-left text-xs font-semibold text-status-gray uppercase">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
@@ -104,7 +105,7 @@ export function AcademicPage() {
             </>
           )}
         </table>
-      </div>
+      </TableCard>
 
       {showNewModal && (
         <NewItemModal

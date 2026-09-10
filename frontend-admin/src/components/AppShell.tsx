@@ -14,8 +14,8 @@ export function AppShell() {
   const { admin, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-bg">
-      <div className="h-14 bg-navy flex items-center justify-between px-7 text-white">
+    <div className="h-screen flex flex-col overflow-hidden bg-bg">
+      <div className="h-14 bg-navy flex items-center justify-between px-7 text-white shrink-0">
         <span className="font-semibold">ScheduleMate — Admin</span>
         <div
           className="w-8 h-8 rounded-full bg-sidebar-navy border border-white/20 flex items-center justify-center text-xs font-semibold text-white"
@@ -25,9 +25,9 @@ export function AppShell() {
         </div>
       </div>
 
-      <div className="flex">
-        <nav className="w-48 min-h-[calc(100vh-3.5rem)] bg-sidebar-navy py-5 px-3 flex flex-col">
-          <div className="flex-1">
+      <div className="flex flex-1 min-h-0">
+        <nav className="w-48 bg-sidebar-navy py-5 px-3 flex flex-col shrink-0">
+          <div className="flex-1 overflow-y-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -43,7 +43,7 @@ export function AppShell() {
             ))}
           </div>
 
-          <div className="border-t border-white/10 mt-2 pt-2">
+          <div className="border-t border-white/10 mt-2 pt-2 shrink-0">
             <button
               onClick={logout}
               className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-status-red/10 hover:text-status-red transition-colors"
@@ -53,7 +53,7 @@ export function AppShell() {
           </div>
         </nav>
 
-        <main className="flex-1 p-7">
+        <main className="flex-1 min-h-0 p-7 flex flex-col overflow-hidden">
           <Outlet />
         </main>
       </div>

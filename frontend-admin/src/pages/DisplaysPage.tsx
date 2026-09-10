@@ -4,6 +4,7 @@ import { getBuildings, type Building } from '../api/structure';
 import { DisplayStatusPill, formatLastSeen } from '../components/DisplayStatusPill';
 import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
+import { TableCard } from '../components/TableCard';
 
 export function DisplaysPage() {
   const [displays, setDisplays] = useState<DisplayItem[]>([]);
@@ -32,7 +33,7 @@ export function DisplaysPage() {
   }
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-xl font-bold text-navy">Digital Signage Displays</h1>
         <button onClick={() => setShowNewModal(true)} className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold">
@@ -40,9 +41,9 @@ export function DisplaysPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <TableCard>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Device ID</th>
               <th className="px-4 py-3">Assigned Location</th>
@@ -74,7 +75,7 @@ export function DisplaysPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </TableCard>
       <p className="text-sm text-status-gray mt-3">
         "Last Seen" reflects the display's most recent ~60s poll to the signage API — a device offline for over 5 minutes is flagged for a maintenance check.
       </p>

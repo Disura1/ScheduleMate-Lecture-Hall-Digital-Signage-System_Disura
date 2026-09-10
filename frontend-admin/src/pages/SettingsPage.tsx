@@ -8,6 +8,7 @@ import { NewAdminModal } from '../components/NewAdminModal';
 import { EditAdminModal } from '../components/EditAdminModal';
 import { ApiError } from '../lib/apiClient';
 import { ReviewRequestModal } from '../components/ReviewRequestModal';
+import { TableCard } from '../components/TableCard';
 
 type Tab = 'profile' | 'accounts' | 'requests';
 
@@ -150,7 +151,7 @@ function AdminAccountsTab() {
   }
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-status-gray">Only Super Admins can create, edit, deactivate, or reactivate admin accounts.</p>
         <button onClick={() => setShowNewModal(true)} className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold">
@@ -158,9 +159,9 @@ function AdminAccountsTab() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <TableCard>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Full Name</th>
               <th className="px-4 py-3">Username</th>
@@ -214,7 +215,7 @@ function AdminAccountsTab() {
             )}
           </tbody>
         </table>
-      </div>
+      </TableCard>
       <p className="text-xs text-status-gray mt-3">
         A deactivated account cannot log in. Reactivating restores access immediately without resetting the password. A Super Admin cannot deactivate their own account.
       </p>
@@ -237,10 +238,10 @@ function PendingRequestsTab({ onResolved }: { onResolved: () => void }) {
   useEffect(reload, []);
 
   return (
-    <div>
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="h-full flex flex-col">
+      <TableCard>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Requested By</th>
               <th className="px-4 py-3">Current → Requested</th>
@@ -275,7 +276,7 @@ function PendingRequestsTab({ onResolved }: { onResolved: () => void }) {
             )}
           </tbody>
         </table>
-      </div>
+      </TableCard>
       <p className="text-xs text-status-gray mt-3">
         Approving applies the requested values immediately — no manual retyping. The requesting admin's current details stay active and unchanged until then.
       </p>

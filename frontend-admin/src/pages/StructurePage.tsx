@@ -5,6 +5,7 @@ import {
 } from '../api/structure';
 import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
+import { TableCard } from '../components/TableCard';
 
 const ROOM_TYPES: CreateRoomInput['type'][] = ['LECTURE', 'LAB', 'LARGE_LECTURE_HALL'];
 const ROOM_TYPE_LABELS: Record<CreateRoomInput['type'], string> = {
@@ -57,7 +58,7 @@ export function StructurePage() {
   const sides = selectedFloor?.sides ?? [];
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-xl font-bold text-navy">Campus Structure</h1>
         <button onClick={() => setShowNewModal(true)} className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold">
@@ -106,9 +107,9 @@ export function StructurePage() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <TableCard>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Room Code</th>
               <th className="px-4 py-3">Type</th>
@@ -137,7 +138,7 @@ export function StructurePage() {
             )}
           </tbody>
         </table>
-      </div>
+      </TableCard>
 
       {showNewModal && (
         <NewRoomModal

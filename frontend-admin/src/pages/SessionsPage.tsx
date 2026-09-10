@@ -7,6 +7,7 @@ import { ApiError } from '../lib/apiClient';
 import { CancelSessionModal } from '../components/CancelSessionModal';
 import { RescheduleSessionModal } from '../components/RescheduleSessionModal';
 import { ViewHistoryModal } from '../components/ViewHistoryModal';
+import { TableCard } from '../components/TableCard';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -38,7 +39,7 @@ export function SessionsPage() {
   }
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-xl font-bold text-navy">Session Management</h1>
         <button onClick={() => setShowNewModal(true)} className="bg-brand-blue text-white px-4 py-2 rounded-lg text-sm font-semibold">
@@ -62,9 +63,9 @@ export function SessionsPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <TableCard>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Module</th>
@@ -102,7 +103,7 @@ export function SessionsPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </TableCard>
       <p className="text-sm text-status-gray mt-3">Showing {sessions.length} session(s)</p>
 
       {showNewModal && (
