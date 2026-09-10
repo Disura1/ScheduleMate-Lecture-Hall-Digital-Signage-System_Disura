@@ -14,8 +14,10 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(username: string, password: string) {
-    const admin = await this.prisma.admin.findUnique({ where: { username } });
+  async login(usernameOrEmail: string, password: string) {
+    const admin = await this.prisma.admin.findFirst({
+      where: { OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }] },
+    });
 
     if (!admin) {
       throw new UnauthorizedException('Invalid username or password');
