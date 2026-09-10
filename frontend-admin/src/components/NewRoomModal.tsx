@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getRooms, updateRoom, type RoomListItem, type CreateRoomInput, type Building } from '../api/structure';
+import { getRooms, createRoom, type Building, type CreateRoomInput } from '../api/structure';
 import { generateNextRoomCode } from '../lib/roomCode';
 import { Modal } from './Modal';
 import { ApiError } from '../lib/apiClient';
@@ -9,11 +9,11 @@ const ROOM_TYPE_LABELS: Record<CreateRoomInput['type'], string> = {
   LECTURE: 'Lecture', LAB: 'Lab', LARGE_LECTURE_HALL: 'Large Lecture Hall',
 };
 
-export function EditRoomModal({ room, buildings, onClose, onSaved }: { room: RoomListItem; buildings: Building[]; onClose: () => void; onSaved: () => void }) {
-  const [buildingId, setBuildingId] = useState<number | ''>(room.side.floor.building.id);
-  const [floorId, setFloorId] = useState<number | ''>(room.side.floor.id);
-  const [sideId, setSideId] = useState<number | ''>(room.sideId);
-  const [type, setType] = useState<CreateRoomInput['type']>(room.type);
+export function NewRoomModal({ buildings, onClose, onCreated }: { buildings: Building[]; onClose: () => void; onCreated: () => void }) {
+  const [buildingId, setBuildingId] = useState<number | ''>('');
+  const [floorId, setFloorId] = useState<number | ''>('');
+  const [sideId, setSideId] = useState<number | ''>('');
+  const [type, setType] = useState<CreateRoomInput['type']>('LECTURE');
   const [existingCodes, setExistingCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -32,34 +32,17 @@ export function EditRoomModal({ room, buildings, onClose, onSaved }: { room: Roo
   const sides = selectedFloor?.sides ?? [];
   const selectedSideObj = sides.find((s) => s.id === sideId);
 
-  // Only regenerate the code if the location or type actually changed from the original —
-  // otherwise recomputing could bump the room to a different number even though nothing
-  // about it actually moved (e.g. if a higher-numbered room exists on the same side).
-  const locationOrTypeChanged =
-    buildingId !== room.side.floor.building.id ||
-    floorId !== room.side.floor.id ||
-    sideId !== room.sideId ||
-    type !== room.type;
-
-  const codeForCalculation = locationOrTypeChanged
-    ? (selectedBuilding && selectedSideObj)
-      ? generateNextRoomCode(
-          selectedBuilding.code,
-          selectedFloor?.floorNumber ?? 0,
-          selectedSideObj.sideCode,
-          type,
-          existingCodes.filter((c) => c !== room.code), // exclude this room's own current code
-        )
-      : ''
-    : room.code;
+  const generatedCode = (selectedBuilding && selectedSideObj)
+    ? generateNextRoomCode(selectedBuilding.code, selectedFloor?.floorNumber ?? 0, selectedSideObj.sideCode, type, existingCodes)
+    : '';
 
   async function handleSave() {
     if (!sideId) { setError('Please select a building, floor, and side.'); return; }
     setError(null);
     setSaving(true);
     try {
-      await updateRoom(room.id, { sideId, code: codeForCalculation, type });
-      onSaved();
+      await createRoom({ sideId, code: generatedCode, type });
+      onCreated();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
     } finally {
@@ -68,7 +51,7 @@ export function EditRoomModal({ room, buildings, onClose, onSaved }: { room: Roo
   }
 
   return (
-    <Modal title="Edit Room" subtitle={`Editing ${room.code}.`} onClose={onClose}>
+    <Modal title="New Room" subtitle="A room must be explicitly assigned to a building, floor, and side." onClose={onClose}>
       <label className="text-sm font-semibold text-navy block mb-1">Building</label>
       <select className="w-full h-10 border border-gray-200 rounded-lg px-2 mb-3 text-sm bg-white" value={buildingId}
         onChange={(e) => { setBuildingId(e.target.value ? Number(e.target.value) : ''); setFloorId(''); setSideId(''); }}>
@@ -95,11 +78,9 @@ export function EditRoomModal({ room, buildings, onClose, onSaved }: { room: Roo
         {ROOM_TYPES.map((t) => <option key={t} value={t}>{ROOM_TYPE_LABELS[t]}</option>)}
       </select>
 
-      <label className="text-sm font-semibold text-navy block mb-1">
-        Room Code {locationOrTypeChanged && <span className="font-normal text-gray-400">(will be regenerated)</span>}
-      </label>
+      <label className="text-sm font-semibold text-navy block mb-1">Room Code <span className="font-normal text-gray-400">(auto-generated)</span></label>
       <div className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-4 text-sm bg-gray-50 flex items-center text-navy font-semibold">
-        {codeForCalculation || 'Select building/floor/side first'}
+        {generatedCode || 'Select building/floor/side first'}
       </div>
 
       {error && <div className="bg-status-red-bg text-status-red text-sm rounded-lg p-3 mb-4">{error}</div>}
@@ -107,7 +88,7 @@ export function EditRoomModal({ room, buildings, onClose, onSaved }: { room: Roo
       <div className="flex gap-2.5">
         <button onClick={onClose} className="flex-1 h-10 border border-gray-200 rounded-lg text-sm font-semibold">Cancel</button>
         <button onClick={handleSave} disabled={saving} className="flex-1 h-10 bg-brand-blue text-white rounded-lg text-sm font-semibold disabled:opacity-60">
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? 'Saving…' : 'Save Room'}
         </button>
       </div>
     </Modal>
