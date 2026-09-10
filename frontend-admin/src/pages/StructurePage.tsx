@@ -6,6 +6,9 @@ import {
 import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
 import { TableCard } from '../components/TableCard';
+import { EditRoomModal } from '../components/EditRoomModal';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { generateNextRoomCode } from '../lib/roomCode';
 
 const ROOM_TYPES: CreateRoomInput['type'][] = ['LECTURE', 'LAB', 'LARGE_LECTURE_HALL'];
 const ROOM_TYPE_LABELS: Record<CreateRoomInput['type'], string> = {
@@ -22,6 +25,8 @@ export function StructurePage() {
   const [rooms, setRooms] = useState<RoomListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<RoomListItem | null>(null);
+  const [deletingRoom, setDeletingRoom] = useState<RoomListItem | null>(null);
 
   useEffect(() => {
     getBuildings().then((data) => {
@@ -37,16 +42,6 @@ export function StructurePage() {
       .then(setRooms)
       .finally(() => setLoading(false));
   }, [buildingId, floorId, sideId]);
-
-  async function handleDelete(id: number) {
-    if (!confirm('Delete this room?')) return;
-    try {
-      await deleteRoom(id);
-      setRooms((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
 
   function reload() {
     getRooms({ buildingId: buildingId || undefined, floorId: floorId || undefined, sideId: sideId || undefined }).then(setRooms);
@@ -131,7 +126,8 @@ export function StructurePage() {
                   <td className="px-4 py-3">{r.side.floor.floorNumber}</td>
                   <td className="px-4 py-3">{r.side.sideCode}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => handleDelete(r.id)} className="text-status-red font-semibold">Delete</button>
+                    <button onClick={() => setEditingRoom(r)} className="text-brand-blue font-semibold mr-3">Edit</button>
+                    <button onClick={() => setDeletingRoom(r)} className="text-status-red font-semibold">Delete</button>
                   </td>
                 </tr>
               ))
@@ -147,6 +143,19 @@ export function StructurePage() {
           onCreated={() => { setShowNewModal(false); reload(); }}
         />
       )}
+
+      {editingRoom && (
+        <EditRoomModal room={editingRoom} buildings={buildings} onClose={() => setEditingRoom(null)} onSaved={() => { setEditingRoom(null); reload(); }} />
+      )}
+      {deletingRoom && (
+        <ConfirmModal
+          title="Delete this room?"
+          subtitle={deletingRoom.code}
+          confirmLabel="Delete Room"
+          onClose={() => setDeletingRoom(null)}
+          onConfirm={async () => { await deleteRoom(deletingRoom.id); setDeletingRoom(null); reload(); }}
+        />
+      )}
     </div>
   );
 }
@@ -155,22 +164,34 @@ function NewRoomModal({ buildings, onClose, onCreated }: { buildings: Building[]
   const [buildingId, setBuildingId] = useState<number | ''>('');
   const [floorId, setFloorId] = useState<number | ''>('');
   const [sideId, setSideId] = useState<number | ''>('');
-  const [code, setCode] = useState('');
   const [type, setType] = useState<CreateRoomInput['type']>('LECTURE');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [existingCodes, setExistingCodes] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (sideId) {
+      getRooms({ sideId }).then((rooms) => setExistingCodes(rooms.map((r) => r.code)));
+    } else {
+      setExistingCodes([]);
+    }
+  }, [sideId]);
 
   const selectedBuilding = buildings.find((b) => b.id === buildingId);
   const floors = selectedBuilding?.floors ?? [];
   const selectedFloor = floors.find((f) => f.id === floorId);
   const sides = selectedFloor?.sides ?? [];
+  const selectedSideObj = sides.find((s) => s.id === sideId);
+  const generatedCode = (selectedBuilding && selectedSideObj)
+    ? generateNextRoomCode(selectedBuilding.code, selectedFloor?.floorNumber ?? 0, selectedSideObj.sideCode, type, existingCodes)
+    : '';
 
   async function handleSave() {
     if (!sideId) { setError('Please select a building, floor, and side.'); return; }
     setError(null);
     setSaving(true);
     try {
-      await createRoom({ sideId, code, type });
+      await createRoom({ sideId, code: generatedCode, type });
       onCreated();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -202,8 +223,10 @@ function NewRoomModal({ buildings, onClose, onCreated }: { buildings: Building[]
         {sides.map((s) => <option key={s.id} value={s.id}>Side {s.sideCode}</option>)}
       </select>
 
-      <label className="text-sm font-semibold text-navy block mb-1">Room Code</label>
-      <input className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-3 text-sm" placeholder="e.g. M-05A-L04" value={code} onChange={(e) => setCode(e.target.value)} />
+      <label className="text-sm font-semibold text-navy block mb-1">Room Code <span className="font-normal text-gray-400">(auto-generated)</span></label>
+      <div className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-3 text-sm bg-gray-50 flex items-center text-navy font-semibold">
+        {generatedCode || 'Select building/floor/side first'}
+      </div>
 
       <label className="text-sm font-semibold text-navy block mb-1">Room Type</label>
       <select className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-4 text-sm" value={type} onChange={(e) => setType(e.target.value as CreateRoomInput['type'])}>
