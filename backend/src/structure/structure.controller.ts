@@ -69,12 +69,14 @@ export class StructureController {
     @Query('floorId') floorId?: string,
     @Query('sideId') sideId?: string,
     @Query('search') search?: string,
+    @Query('status') status?: string,
   ) {
     return this.structureService.getRoomStatus({
       buildingId: buildingId ? parseInt(buildingId, 10) : undefined,
       floorId: floorId ? parseInt(floorId, 10) : undefined,
       sideId: sideId ? parseInt(sideId, 10) : undefined,
       search,
+      status,
     });
   }
 }

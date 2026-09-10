@@ -79,7 +79,7 @@ export class StructureService {
     return room;
   }
 
-  async getRoomStatus(filters: { buildingId?: number; floorId?: number; sideId?: number; search?: string }) {
+  async getRoomStatus(filters: { buildingId?: number; floorId?: number; sideId?: number; search?: string; status?: string }) {
     const rooms = await this.prisma.room.findMany({
       where: {
         side: {
@@ -151,9 +151,15 @@ export class StructureService {
       }),
     );
 
+    let filtered = results;
+
+    if (filters.status) {
+      filtered = filtered.filter((r) => r.status === filters.status);
+    }
+
     if (filters.search) {
       const term = filters.search.toLowerCase();
-      return results.filter(
+      filtered = filtered.filter(
         (r) =>
           r.currentSession?.module.code.toLowerCase().includes(term) ||
           r.currentSession?.module.name.toLowerCase().includes(term) ||
@@ -161,6 +167,6 @@ export class StructureService {
       );
     }
 
-    return results;
+    return filtered;
   }
 }
