@@ -7,6 +7,7 @@ import { ApiError } from '../lib/apiClient';
 export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { login: setAuthState } = useAuth();
@@ -14,6 +15,7 @@ export function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
     try {
@@ -48,13 +50,22 @@ export function LoginPage() {
           />
 
           <label className="text-sm font-semibold text-navy block mb-1">Password</label>
-          <input
-            type="password"
-            className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-6 text-sm"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="relative mb-6">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              className="w-full h-10 border border-gray-200 rounded-lg px-3 pr-16 text-sm"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-brand-blue"
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
 
           {error && <p className="text-status-red text-sm text-center mb-4">{error}</p>}
 

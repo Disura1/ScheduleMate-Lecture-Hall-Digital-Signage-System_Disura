@@ -23,7 +23,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && token) {
+    // Only treat this as "your session expired" if a token was actually attached to
+    // the request — a 401 with no token just means invalid login credentials, not an
+    // expired session (there was never a session to expire).
     clearToken();
     window.location.href = '/login';
     throw new ApiError(401, 'Session expired — please log in again');
