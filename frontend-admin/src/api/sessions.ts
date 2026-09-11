@@ -66,4 +66,11 @@ export function getSessionHistory(id: number) {
   return api.get<SessionItem[]>(`/sessions/${id}/history`);
 }
 
+export function isSessionPast(session: SessionItem): boolean {
+  const datePart = session.sessionDate.substring(0, 10);
+  const timePart = session.endTime.substring(11, 16);
+  const endDateTime = new Date(`${datePart}T${timePart}:00`); // interpreted as local time, matching the backend's own logic
+  return endDateTime < new Date();
+}
+
 export { formatTime, formatDate };

@@ -8,6 +8,7 @@ import { RescheduleSessionModal } from '../components/RescheduleSessionModal';
 import { ViewHistoryModal } from '../components/ViewHistoryModal';
 import { TableCard } from '../components/TableCard';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { isSessionPast } from '../api/sessions';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -59,6 +60,7 @@ export function SessionsPage() {
             <tr className="text-left text-xs font-semibold text-status-gray uppercase">
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Module</th>
+              <th className="px-4 py-3">Lecturer</th>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Time</th>
               <th className="px-4 py-3">Status</th>
@@ -67,14 +69,15 @@ export function SessionsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-status-gray">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-status-gray">Loading…</td></tr>
             ) : sessions.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-status-gray">No sessions found</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-status-gray">No sessions found</td></tr>
             ) : (
               sessions.map((s) => (
                 <tr key={s.id} className="border-t border-gray-100">
                   <td className="px-4 py-3">{s.room.code}</td>
                   <td className="px-4 py-3">{s.module.code}</td>
+                  <td className="px-4 py-3">{s.lecturer.name}</td>
                   <td className="px-4 py-3">{formatDate(s.sessionDate)}</td>
                   <td className="px-4 py-3">{formatTime(s.startTime)}–{formatTime(s.endTime)}</td>
                   <td className="px-4 py-3"><SessionStatusPill status={s.status} /></td>
@@ -147,7 +150,9 @@ function SessionActions({ session, onEdit, onCancel, onReopen, onReschedule, onV
         </>
       );
     case 'CANCELLED':
-      return <button onClick={onReopen} className="text-status-green font-semibold">Reopen</button>;
+      return isSessionPast(session)
+        ? <span className="text-gray-300 text-xs">No actions</span>
+        : <button onClick={onReopen} className="text-status-green font-semibold">Reopen</button>;
     default:
       return <span className="text-gray-300 text-xs">No actions</span>;
   }
