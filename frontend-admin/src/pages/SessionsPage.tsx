@@ -11,6 +11,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { isSessionPast } from '../api/sessions';
 import { getBuildings, type Building } from '../api/structure';
 import { getModules, getLecturers, type ModuleItem, type LecturerItem } from '../api/academic';
+import { useToast } from '../context/ToastContext';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -33,6 +34,7 @@ export function SessionsPage() {
   const [date, setDate] = useState('');
   const [timeFrom, setTimeFrom] = useState('');
   const [timeTo, setTimeTo] = useState('');
+  const { showSuccess } = useToast();
 
   useEffect(() => {
     getBuildings().then(setBuildings);
@@ -169,10 +171,10 @@ export function SessionsPage() {
       <p className="text-sm text-status-gray mt-3">Showing {sessions.length} session(s)</p>
 
       {showNewModal && (
-        <NewSessionModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); }} />
+        <NewSessionModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); showSuccess('Session created successfully.'); }} />
       )}
       {editingSession && (
-        <EditSessionModal session={editingSession} onClose={() => setEditingSession(null)} onSaved={() => { setEditingSession(null); reload(); }} />
+        <EditSessionModal session={editingSession} onClose={() => setEditingSession(null)} onSaved={() => { setEditingSession(null); reload(); showSuccess('Session updated successfully.'); }} />
       )}
       {reopenError && (
         <div className="fixed bottom-6 right-6 bg-status-red-bg text-status-red text-sm rounded-lg p-4 shadow-lg max-w-sm">
@@ -181,10 +183,10 @@ export function SessionsPage() {
         </div>
       )}
       {cancellingSession && (
-        <CancelSessionModal session={cancellingSession} onClose={() => setCancellingSession(null)} onCancelled={() => { setCancellingSession(null); reload(); }} />
+        <CancelSessionModal session={cancellingSession} onClose={() => setCancellingSession(null)} onCancelled={() => { setCancellingSession(null); reload(); showSuccess('Session cancelled successfully.'); }} />
       )}
       {reschedulingSession && (
-        <RescheduleSessionModal session={reschedulingSession} onClose={() => setReschedulingSession(null)} onRescheduled={() => { setReschedulingSession(null); reload(); }} />
+        <RescheduleSessionModal session={reschedulingSession} onClose={() => setReschedulingSession(null)} onRescheduled={() => { setReschedulingSession(null); reload(); showSuccess('Session rescheduled successfully.'); }} />
       )}
       {viewingHistoryId && (
         <ViewHistoryModal sessionId={viewingHistoryId} onClose={() => setViewingHistoryId(null)} />
@@ -197,8 +199,7 @@ export function SessionsPage() {
           confirmLabel="Reopen Session"
           danger={false}
           onClose={() => setReopeningSession(null)}
-          onConfirm={async () => { await reopenSession(reopeningSession.id); setReopeningSession(null); reload(); }}
-        />
+          onConfirm={async () => { await reopenSession(reopeningSession.id); setReopeningSession(null); reload(); showSuccess('Session reopened successfully.'); }} />
       )}
     </div>
   );

@@ -12,32 +12,35 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ActivateAccountPage } from './pages/ActivateAccountPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { ToastProvider } from './context/ToastContext';
 
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/activate" element={<ActivateAccountPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppShell />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/academic" element={<AcademicPage />} />
-              <Route path="/structure" element={<StructurePage />} />
-              <Route path="/sessions" element={<SessionsPage />} />
-              <Route path="/displays" element={<DisplaysPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              {/* more pages will be added here as we build them */}
+      <ToastProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/activate" element={<ActivateAccountPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+    
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppShell />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/academic" element={<AcademicPage />} />
+                <Route path="/structure" element={<StructurePage />} />
+                <Route path="/sessions" element={<SessionsPage />} />
+                <Route path="/displays" element={<DisplaysPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                {/* more pages will be added here as we build them */}
+              </Route>
             </Route>
-          </Route>
-
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AuthProvider>
+    
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

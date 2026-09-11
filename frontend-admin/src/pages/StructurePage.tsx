@@ -7,6 +7,7 @@ import { TableCard } from '../components/TableCard';
 import { EditRoomModal } from '../components/EditRoomModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { NewRoomModal } from '../components/NewRoomModal';
+import { useToast } from '../context/ToastContext';
 
 const ROOM_TYPE_LABELS: Record<CreateRoomInput['type'], string> = {
   LECTURE: 'Lecture',
@@ -24,6 +25,7 @@ export function StructurePage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomListItem | null>(null);
   const [deletingRoom, setDeletingRoom] = useState<RoomListItem | null>(null);
+  const { showSuccess } = useToast();
 
   useEffect(() => {
     getBuildings().then((data) => {
@@ -134,15 +136,10 @@ export function StructurePage() {
       </TableCard>
 
       {showNewModal && (
-        <NewRoomModal
-          buildings={buildings}
-          onClose={() => setShowNewModal(false)}
-          onCreated={() => { setShowNewModal(false); reload(); }}
-        />
+        <NewRoomModal buildings={buildings} onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); showSuccess('Room created successfully.'); }} />
       )}
-
       {editingRoom && (
-        <EditRoomModal room={editingRoom} buildings={buildings} onClose={() => setEditingRoom(null)} onSaved={() => { setEditingRoom(null); reload(); }} />
+        <EditRoomModal room={editingRoom} buildings={buildings} onClose={() => setEditingRoom(null)} onSaved={() => { setEditingRoom(null); reload(); showSuccess('Room updated successfully.'); }} />
       )}
       {deletingRoom && (
         <ConfirmModal
@@ -150,7 +147,7 @@ export function StructurePage() {
           subtitle={deletingRoom.code}
           confirmLabel="Delete Room"
           onClose={() => setDeletingRoom(null)}
-          onConfirm={async () => { await deleteRoom(deletingRoom.id); setDeletingRoom(null); reload(); }}
+          onConfirm={async () => { await deleteRoom(deletingRoom.id); setDeletingRoom(null); reload(); showSuccess('Room deleted successfully.'); }}
         />
       )}
     </div>

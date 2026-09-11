@@ -6,10 +6,10 @@ import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { getAdminAccounts, deactivateAccount, reactivateAccount, getPendingRequests, type AdminAccount, type PendingRequest } from '../api/adminAccounts';
 import { NewAdminModal } from '../components/NewAdminModal';
 import { EditAdminModal } from '../components/EditAdminModal';
-import { ApiError } from '../lib/apiClient';
 import { ReviewRequestModal } from '../components/ReviewRequestModal';
 import { TableCard } from '../components/TableCard';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useToast } from '../context/ToastContext';
 
 type Tab = 'profile' | 'accounts' | 'requests';
 
@@ -54,6 +54,7 @@ function MyProfileTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const { showSuccess } = useToast();
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-7 max-w-lg">
@@ -101,8 +102,8 @@ function MyProfileTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         </button>
       </div>
 
-      {showEditModal && <EditProfileModal onClose={() => setShowEditModal(false)} onSaved={() => setShowEditModal(false)} />}
-      {showRequestModal && <RequestProfileChangeModal onClose={() => setShowRequestModal(false)} onSubmitted={() => setShowRequestModal(false)} />}
+      {showEditModal && <EditProfileModal onClose={() => setShowEditModal(false)} onSaved={() => { setShowEditModal(false); showSuccess('Profile updated successfully.'); }} />}
+      {showRequestModal && <RequestProfileChangeModal onClose={() => setShowRequestModal(false)} onSubmitted={() => { setShowRequestModal(false); showSuccess('Request sent — a Super Admin will review it.'); }} />}
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
     </div>
   );
@@ -126,21 +127,14 @@ function AdminAccountsTab() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
   const [deactivatingAccount, setDeactivatingAccount] = useState<AdminAccount | null>(null);
+  const [reactivatingAccount, setReactivatingAccount] = useState<AdminAccount | null>(null);
+  const { showSuccess } = useToast();
 
   function reload() {
     setLoading(true);
     getAdminAccounts().then(setAccounts).finally(() => setLoading(false));
   }
   useEffect(reload, []);
-
-  async function handleReactivate(id: number) {
-    try {
-      await reactivateAccount(id);
-      reload();
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Something went wrong');
-    }
-  }
 
   return (
     <div className="h-full flex flex-col">
@@ -196,7 +190,7 @@ function AdminAccountsTab() {
                           {a.status === 'ACTIVE' ? (
                             <button onClick={() => setDeactivatingAccount(a)} className="text-status-red font-semibold">Deactivate</button>
                           ) : (
-                            <button onClick={() => handleReactivate(a.id)} className="text-status-green font-semibold">Activate</button>
+                            <button onClick={() => setReactivatingAccount(a)} className="text-status-green font-semibold">Activate</button>
                           )}
                         </>
                       )}
@@ -212,8 +206,8 @@ function AdminAccountsTab() {
         A deactivated account cannot log in. Reactivating restores access immediately without resetting the password. A Super Admin cannot deactivate their own account.
       </p>
 
-      {showNewModal && <NewAdminModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); }} />}
-      {editingAccount && <EditAdminModal target={editingAccount} onClose={() => setEditingAccount(null)} onSaved={() => { setEditingAccount(null); reload(); }} />}
+      {showNewModal && <NewAdminModal onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); showSuccess('Admin account created — activation email sent.'); }} />}
+      {editingAccount && <EditAdminModal target={editingAccount} onClose={() => setEditingAccount(null)} onSaved={() => { setEditingAccount(null); reload(); showSuccess('Admin account updated successfully.'); }} />}
       {deactivatingAccount && (
         <ConfirmModal
           title="Deactivate this admin account?"
@@ -221,7 +215,18 @@ function AdminAccountsTab() {
           bodyText="This blocks login immediately but preserves their history for accountability."
           confirmLabel="Deactivate Account"
           onClose={() => setDeactivatingAccount(null)}
-          onConfirm={async () => { await deactivateAccount(deactivatingAccount.id); setDeactivatingAccount(null); reload(); }}
+          onConfirm={async () => { await deactivateAccount(deactivatingAccount.id); setDeactivatingAccount(null); reload(); showSuccess('Account deactivated.'); }}
+        />
+      )}
+      {reactivatingAccount && (
+        <ConfirmModal
+          title="Reactivate this admin account?"
+          subtitle={`${reactivatingAccount.fullName} (${reactivatingAccount.username})`}
+          bodyText="This immediately restores login access. Their password is unchanged from before deactivation."
+          confirmLabel="Activate Account"
+          danger={false}
+          onClose={() => setReactivatingAccount(null)}
+          onConfirm={async () => { await reactivateAccount(reactivatingAccount.id); setReactivatingAccount(null); reload(); showSuccess('Account reactivated.'); }}
         />
       )}
     </div>
@@ -232,6 +237,7 @@ function PendingRequestsTab({ onResolved }: { onResolved: () => void }) {
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState<PendingRequest | null>(null);
+  const { showSuccess } = useToast();
 
   function reload() {
     setLoading(true);
@@ -284,7 +290,7 @@ function PendingRequestsTab({ onResolved }: { onResolved: () => void }) {
       </p>
 
       {reviewing && (
-        <ReviewRequestModal request={reviewing} onClose={() => setReviewing(null)} onResolved={() => { setReviewing(null); reload(); onResolved(); }} />
+        <ReviewRequestModal request={reviewing} onClose={() => setReviewing(null)} onResolved={() => { setReviewing(null); reload(); onResolved(); showSuccess('Request resolved.'); }} />
       )}
     </div>
   );

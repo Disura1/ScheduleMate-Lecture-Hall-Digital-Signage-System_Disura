@@ -6,6 +6,7 @@ import { Modal } from '../components/Modal';
 import { ApiError } from '../lib/apiClient';
 import { TableCard } from '../components/TableCard';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useToast } from '../context/ToastContext';
 
 export function DisplaysPage() {
   const [displays, setDisplays] = useState<DisplayItem[]>([]);
@@ -14,6 +15,7 @@ export function DisplaysPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [reassigningDisplay, setReassigningDisplay] = useState<DisplayItem | null>(null);
   const [removingDisplay, setRemovingDisplay] = useState<DisplayItem | null>(null);
+  const { showSuccess } = useToast();
 
   function reload() {
     setLoading(true);
@@ -73,10 +75,10 @@ export function DisplaysPage() {
       </p>
 
       {showNewModal && (
-        <RegisterDisplayModal buildings={buildings} onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); }} />
+        <RegisterDisplayModal buildings={buildings} onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); showSuccess('Display registered successfully.'); }} />
       )}
       {reassigningDisplay && (
-        <ReassignDisplayModal display={reassigningDisplay} buildings={buildings} onClose={() => setReassigningDisplay(null)} onSaved={() => { setReassigningDisplay(null); reload(); }} />
+        <ReassignDisplayModal display={reassigningDisplay} buildings={buildings} onClose={() => setReassigningDisplay(null)} onSaved={() => { setReassigningDisplay(null); reload(); showSuccess('Display reassigned successfully.');  }} />
       )}
       {removingDisplay && (
         <ConfirmModal
@@ -85,7 +87,7 @@ export function DisplaysPage() {
           bodyText="The physical device will stop being able to fetch signage data. This does not affect any sessions."
           confirmLabel="Remove Display"
           onClose={() => setRemovingDisplay(null)}
-          onConfirm={async () => { await removeDisplay(removingDisplay.id); setRemovingDisplay(null); reload(); }}
+          onConfirm={async () => { await removeDisplay(removingDisplay.id); setRemovingDisplay(null); reload(); showSuccess('Display removed successfully.'); }}
         />
       )}
     </div>

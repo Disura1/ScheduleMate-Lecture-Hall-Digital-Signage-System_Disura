@@ -9,6 +9,7 @@ import { ApiError } from '../lib/apiClient';
 import { TableCard } from '../components/TableCard';
 import { updateModule, updateLecturer } from '../api/academic';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useToast } from '../context/ToastContext';
 
 export function AcademicPage() {
   const [tab, setTab] = useState<'modules' | 'lecturers'>('modules');
@@ -20,6 +21,7 @@ export function AcademicPage() {
   const [editingLecturer, setEditingLecturer] = useState<LecturerItem | null>(null);
   const [deletingModule, setDeletingModule] = useState<ModuleItem | null>(null);
   const [deletingLecturer, setDeletingLecturer] = useState<LecturerItem | null>(null);
+  const { showSuccess } = useToast();
 
   function reload() {
     getModules().then(setModules);
@@ -119,13 +121,13 @@ export function AcademicPage() {
       </TableCard>
 
       {showFormModal && (
-        <ItemFormModal kind={tab} onClose={() => setShowFormModal(false)} onSaved={() => { setShowFormModal(false); reload(); }} />
+        <ItemFormModal kind={tab} onClose={() => setShowFormModal(false)} onSaved={() => { setShowFormModal(false); reload(); showSuccess('Item created successfully.'); }} />
       )}
       {editingModule && (
-        <ItemFormModal kind="modules" existingModule={editingModule} onClose={() => setEditingModule(null)} onSaved={() => { setEditingModule(null); reload(); }} />
+        <ItemFormModal kind="modules" existingModule={editingModule} onClose={() => setEditingModule(null)} onSaved={() => { setEditingModule(null); reload(); showSuccess('Module updated successfully.'); }} />
       )}
       {editingLecturer && (
-        <ItemFormModal kind="lecturers" existingLecturer={editingLecturer} onClose={() => setEditingLecturer(null)} onSaved={() => { setEditingLecturer(null); reload(); }} />
+        <ItemFormModal kind="lecturers" existingLecturer={editingLecturer} onClose={() => setEditingLecturer(null)} onSaved={() => { setEditingLecturer(null); reload(); showSuccess('Lecturer updated successfully.'); }} />
       )}
       {deletingModule && (
         <ConfirmModal
@@ -133,8 +135,7 @@ export function AcademicPage() {
           subtitle={`${deletingModule.code} — ${deletingModule.name}`}
           confirmLabel="Delete Module"
           onClose={() => setDeletingModule(null)}
-          onConfirm={async () => { await deleteModule(deletingModule.id); setDeletingModule(null); reload(); }}
-        />
+          onConfirm={async () => { await deleteModule(deletingModule.id); setDeletingModule(null); reload(); showSuccess('Module deleted successfully.'); }} />
       )}
       {deletingLecturer && (
         <ConfirmModal
@@ -142,8 +143,7 @@ export function AcademicPage() {
           subtitle={deletingLecturer.name}
           confirmLabel="Delete Lecturer"
           onClose={() => setDeletingLecturer(null)}
-          onConfirm={async () => { await deleteLecturer(deletingLecturer.id); setDeletingLecturer(null); reload(); }}
-        />
+          onConfirm={async () => { await deleteLecturer(deletingLecturer.id); setDeletingLecturer(null); reload(); showSuccess('Lecturer deleted successfully.'); }} />
       )}
     </div>
   );
