@@ -16,7 +16,7 @@ export function AppShell() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bg">
       <div className="h-14 bg-navy flex items-center justify-between px-7 text-white shrink-0">
-        <span className="font-semibold">ScheduleMate — Admin</span>
+        <span className="font-semibold">ScheduleMate — {admin?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}</span>
         <div
           className="w-8 h-8 rounded-full bg-sidebar-navy border border-white/20 flex items-center justify-center text-xs font-semibold text-white"
           title={admin?.fullName}
