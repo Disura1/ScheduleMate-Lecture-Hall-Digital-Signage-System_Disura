@@ -18,10 +18,29 @@ export class SessionsController {
   }
 
   @Get()
-  findAll(@Query('roomId') roomId?: string, @Query('status') status?: string) {
+  findAll(
+    @Query('roomId') roomId?: string,
+    @Query('status') status?: string,
+    @Query('date') date?: string,
+    @Query('timeFrom') timeFrom?: string,
+    @Query('timeTo') timeTo?: string,
+    @Query('buildingId') buildingId?: string,
+    @Query('floorId') floorId?: string,
+    @Query('sideId') sideId?: string,
+    @Query('moduleId') moduleId?: string,
+    @Query('lecturerId') lecturerId?: string,
+  ) {
     return this.sessionsService.findAll({
       roomId: roomId ? parseInt(roomId, 10) : undefined,
       status,
+      date,
+      timeFrom,
+      timeTo,
+      buildingId: buildingId ? parseInt(buildingId, 10) : undefined,
+      floorId: floorId ? parseInt(floorId, 10) : undefined,
+      sideId: sideId ? parseInt(sideId, 10) : undefined,
+      moduleId: moduleId ? parseInt(moduleId, 10) : undefined,
+      lecturerId: lecturerId ? parseInt(lecturerId, 10) : undefined,
     });
   }
 

@@ -14,7 +14,7 @@ export interface SessionItem {
   status: SessionStatus;
   cancellationReason: string | null;
   rescheduleReason: string | null;
-  room: { id: number; code: string };
+  room: { id: number; code: string; side: { id: number; sideCode: string; floor: { id: number; floorNumber: number; building: { id: number; name: string; code: string } } } };
   module: { id: number; code: string; name: string };
   lecturer: { id: number; name: string };
 }
@@ -35,10 +35,14 @@ function formatDate(isoString: string): string {
   return isoString.substring(0, 10); // "YYYY-MM-DD"
 }
 
-export function getSessions(filters: { roomId?: number; status?: string } = {}) {
+export function getSessions(filters: {
+  roomId?: number; status?: string; date?: string; timeFrom?: string; timeTo?: string;
+  buildingId?: number; floorId?: number; sideId?: number; moduleId?: number; lecturerId?: number;
+} = {}) {
   const params = new URLSearchParams();
-  if (filters.roomId) params.set('roomId', String(filters.roomId));
-  if (filters.status) params.set('status', filters.status);
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') params.set(key, String(value));
+  });
   return api.get<SessionItem[]>(`/sessions?${params.toString()}`);
 }
 

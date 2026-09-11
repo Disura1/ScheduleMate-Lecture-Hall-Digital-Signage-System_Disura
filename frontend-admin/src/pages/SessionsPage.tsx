@@ -9,6 +9,8 @@ import { ViewHistoryModal } from '../components/ViewHistoryModal';
 import { TableCard } from '../components/TableCard';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { isSessionPast } from '../api/sessions';
+import { getBuildings, type Building } from '../api/structure';
+import { getModules, getLecturers, type ModuleItem, type LecturerItem } from '../api/academic';
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -20,12 +22,50 @@ export function SessionsPage() {
   const [reschedulingSession, setReschedulingSession] = useState<SessionItem | null>(null);
   const [viewingHistoryId, setViewingHistoryId] = useState<number | null>(null);
   const [reopeningSession, setReopeningSession] = useState<SessionItem | null>(null);
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [modulesList, setModulesList] = useState<ModuleItem[]>([]);
+  const [lecturersList, setLecturersList] = useState<LecturerItem[]>([]);
+  const [buildingId, setBuildingId] = useState<number | ''>('');
+  const [floorId, setFloorId] = useState<number | ''>('');
+  const [sideId, setSideId] = useState<number | ''>('');
+  const [moduleId, setModuleId] = useState<number | ''>('');
+  const [lecturerId, setLecturerId] = useState<number | ''>('');
+  const [date, setDate] = useState('');
+  const [timeFrom, setTimeFrom] = useState('');
+  const [timeTo, setTimeTo] = useState('');
+
+  useEffect(() => {
+    getBuildings().then(setBuildings);
+    getModules().then(setModulesList);
+    getLecturers().then(setLecturersList);
+  }, []);
+
+  const selectedBuilding = buildings.find((b) => b.id === buildingId);
+  const floors = selectedBuilding?.floors ?? [];
+  const selectedFloor = floors.find((f) => f.id === floorId);
+  const sides = selectedFloor?.sides ?? [];
+
+  const hasActiveFilters = status || buildingId || floorId || sideId || moduleId || lecturerId || date || timeFrom || timeTo;
+  function clearAllFilters() {
+    setStatus(''); setBuildingId(''); setFloorId(''); setSideId('');
+    setModuleId(''); setLecturerId(''); setDate(''); setTimeFrom(''); setTimeTo('');
+  }
 
   function reload() {
     setLoading(true);
-    getSessions({ status: status || undefined }).then(setSessions).finally(() => setLoading(false));
+    getSessions({
+      status: status || undefined,
+      buildingId: buildingId || undefined,
+      floorId: floorId || undefined,
+      sideId: sideId || undefined,
+      moduleId: moduleId || undefined,
+      lecturerId: lecturerId || undefined,
+      date: date || undefined,
+      timeFrom: timeFrom || undefined,
+      timeTo: timeTo || undefined,
+    }).then(setSessions).finally(() => setLoading(false));
   }
-  useEffect(reload, [status]);
+  useEffect(reload, [status, buildingId, floorId, sideId, moduleId, lecturerId, date, timeFrom, timeTo]);
 
   const [reopenError, setReopenError] = useState<string | null>(null);
 
@@ -38,20 +78,49 @@ export function SessionsPage() {
         </button>
       </div>
 
-      <div className="flex gap-2.5 mb-4">
-        <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">Status: All</option>
-          <option value="SCHEDULED">Scheduled</option>
-          <option value="RESCHEDULED">Rescheduled</option>
-          <option value="CANCELLED">Cancelled</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
-
-        {status && (
-          <button onClick={() => setStatus('')} className="text-sm text-brand-blue font-semibold">
-            Clear Filter
-          </button>
-        )}
+      <div className="mb-4">
+        <div className="flex gap-2.5 mb-2 flex-wrap">
+          <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={buildingId}
+            onChange={(e) => { setBuildingId(e.target.value ? Number(e.target.value) : ''); setFloorId(''); setSideId(''); }}>
+            <option value="">Building: All</option>
+            {buildings.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={floorId} disabled={!buildingId}
+            onChange={(e) => { setFloorId(e.target.value ? Number(e.target.value) : ''); setSideId(''); }}>
+            <option value="">Floor: All</option>
+            {floors.map((f) => <option key={f.id} value={f.id}>Floor {f.floorNumber}</option>)}
+          </select>
+          <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={sideId} disabled={!floorId}
+            onChange={(e) => setSideId(e.target.value ? Number(e.target.value) : '')}>
+            <option value="">Side: All</option>
+            {sides.map((s) => <option key={s.id} value={s.id}>Side {s.sideCode}</option>)}
+          </select>
+          <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">Status: All</option>
+            <option value="SCHEDULED">Scheduled</option>
+            <option value="RESCHEDULED">Rescheduled</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+        <div className="flex gap-2.5 items-center flex-wrap">
+          <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={moduleId} onChange={(e) => setModuleId(e.target.value ? Number(e.target.value) : '')}>
+            <option value="">Module: All</option>
+            {modulesList.map((m) => <option key={m.id} value={m.id}>{m.code}</option>)}
+          </select>
+          <select className="h-9 border border-gray-200 rounded-lg px-3 text-sm bg-white" value={lecturerId} onChange={(e) => setLecturerId(e.target.value ? Number(e.target.value) : '')}>
+            <option value="">Lecturer: All</option>
+            {lecturersList.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+          </select>
+          <input type="date" className="h-9 border border-gray-200 rounded-lg px-3 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+          <span className="text-sm text-status-gray">Time:</span>
+          <input type="time" className="h-9 border border-gray-200 rounded-lg px-2 text-sm" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} />
+          <span className="text-sm text-status-gray">to</span>
+          <input type="time" className="h-9 border border-gray-200 rounded-lg px-2 text-sm" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} />
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters} className="text-sm text-brand-blue font-semibold">Clear Filters</button>
+          )}
+        </div>
       </div>
 
       <TableCard>

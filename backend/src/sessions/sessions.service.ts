@@ -97,20 +97,27 @@ export class SessionsService {
     });
   }
 
-  async findAll(filters: { roomId?: number; status?: string }) {
+  async findAll(filters: {
+    roomId?: number; status?: string; date?: string; timeFrom?: string; timeTo?: string;
+    buildingId?: number; floorId?: number; sideId?: number; moduleId?: number; lecturerId?: number;
+  }) {
     const sessions = await this.prisma.session.findMany({
       where: {
         roomId: filters.roomId,
+        moduleId: filters.moduleId,
+        lecturerId: filters.lecturerId,
+        sessionDate: filters.date ? new Date(filters.date) : undefined,
         status: filters.status ? (filters.status as any) : { notIn: ['SUPERSEDED', 'COMPLETED'] },
+        startTime: filters.timeFrom ? { gte: timeStringToDate(filters.timeFrom) } : undefined,
+        endTime: filters.timeTo ? { lte: timeStringToDate(filters.timeTo) } : undefined,
+        room: (filters.buildingId || filters.floorId || filters.sideId)
+          ? { side: { id: filters.sideId, floor: { id: filters.floorId, buildingId: filters.buildingId } } }
+          : undefined,
       },
-      include: { room: true, module: true, lecturer: true },
+      include: { room: { include: { side: { include: { floor: { include: { building: true } } } } } }, module: true, lecturer: true },
       orderBy: [{ sessionDate: 'asc' }, { startTime: 'asc' }],
     });
 
-    // Default view only: also hide Cancelled sessions whose time has already passed.
-    // A future cancellation is still worth seeing; a past one is just clutter — same
-    // reasoning as excluding Completed by default. Explicitly filtering for
-    // status=CANCELLED still shows ALL of them, past and future.
     if (!filters.status) {
       const now = new Date();
       return sessions.filter((s) => {
@@ -118,7 +125,6 @@ export class SessionsService {
         return combineDateAndTime(s.sessionDate, s.endTime) >= now;
       });
     }
-
     return sessions;
   }
 
