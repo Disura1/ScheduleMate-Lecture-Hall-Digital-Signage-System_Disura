@@ -22,9 +22,10 @@ function App() {
 
   useEffect(() => {
     if (!deviceId) return; // nothing to fetch — handled by the render below
-
+    const id = deviceId; // narrow once, here, so TypeScript knows this is a plain string below
+    
     function fetchData() {
-      getSlideData(deviceId)
+      getSlideData(id)
         .then((newData) => { setData(newData); setError(null); })
         .catch((err) => setError(err.message));
     }
