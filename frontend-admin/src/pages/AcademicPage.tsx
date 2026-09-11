@@ -15,6 +15,7 @@ export function AcademicPage() {
   const [modules, setModules] = useState<ModuleItem[]>([]);
   const [lecturers, setLecturers] = useState<LecturerItem[]>([]);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [search, setSearch] = useState('');
   const [editingModule, setEditingModule] = useState<ModuleItem | null>(null);
   const [editingLecturer, setEditingLecturer] = useState<LecturerItem | null>(null);
   const [deletingModule, setDeletingModule] = useState<ModuleItem | null>(null);
@@ -25,6 +26,9 @@ export function AcademicPage() {
     getLecturers().then(setLecturers);
   }
   useEffect(reload, []);
+
+  const filteredModules = modules.filter((m) => m.code.toLowerCase().includes(search.toLowerCase()) || m.name.toLowerCase().includes(search.toLowerCase()));
+  const filteredLecturers = lecturers.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="h-full flex flex-col">
@@ -43,6 +47,23 @@ export function AcademicPage() {
         <TabButton active={tab === 'lecturers'} onClick={() => setTab('lecturers')}>Lecturers</TabButton>
       </div>
 
+      <div className="relative mb-4 max-w-70">
+        <input
+          className="w-full h-9 border border-gray-200 rounded-lg pl-3 pr-9 text-sm"
+          placeholder={`Search ${tab === 'modules' ? 'modules' : 'lecturers'}...`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-status-gray text-sm leading-none"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       <TableCard>
         <table className="w-full text-sm">
           {tab === 'modules' ? (
@@ -56,7 +77,7 @@ export function AcademicPage() {
                 </tr>
               </thead>
               <tbody>
-                {modules.map((m) => (
+                {filteredModules.map((m) => (
                   <tr key={m.id} className="border-t border-gray-100">
                     <td className="px-4 py-3">{m.code}</td>
                     <td className="px-4 py-3">{m.name}</td>
@@ -80,7 +101,7 @@ export function AcademicPage() {
                 </tr>
               </thead>
               <tbody>
-                {lecturers.map((l) => (
+                {filteredLecturers.map((l) => (
                   <tr key={l.id} className="border-t border-gray-100">
                     <td className="px-4 py-3">{l.name}</td>
                     <td className="px-4 py-3">{l.email}</td>
