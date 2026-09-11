@@ -6,6 +6,7 @@ import { OngoingSlide } from './slides/OngoingSlide';
 import { UpcomingSlide } from './slides/UpcomingSlide';
 import { CancelledSlide } from './slides/CancelledSlide';
 import { RescheduledSlide } from './slides/RescheduledSlide';
+import { pageCount } from './lib/paginate';
 
 const SLIDE_DURATION_MS = 8_000;
 
@@ -35,26 +36,27 @@ function App() {
   }, []);
 
   // Ongoing and Upcoming always show (even empty); Cancelled/Rescheduled only join when they have content (FR-18/FR-19)
-  const availableSlides: SlideKind[] = data
-    ? SLIDE_ORDER.filter((kind) => {
-        if (kind === 'ongoing' || kind === 'upcoming') return true;
-        if (kind === 'cancelled') return data.cancelled.length > 0;
-        return data.rescheduled.length > 0;
-      })
-    : [];
+  const slideQueue: { kind: SlideKind; page: number }[] = data
+  ? SLIDE_ORDER.flatMap((kind) => {
+      const sessions = data[kind];
+      if (kind !== 'ongoing' && kind !== 'upcoming' && sessions.length === 0) return [];
+      const pages = pageCount(sessions.length);
+      return Array.from({ length: pages }, (_, page) => ({ kind, page }));
+    })
+  : [];
 
   useEffect(() => {
-    if (availableSlides.length === 0) return;
+    if (slideQueue.length === 0) return;
     const rotationInterval = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % availableSlides.length);
+      setActiveSlide((prev) => (prev + 1) % slideQueue.length);
     }, SLIDE_DURATION_MS);
     return () => clearInterval(rotationInterval);
-  }, [availableSlides.length]);
+  }, [slideQueue.length]);
 
   // If the slide list shrank (e.g. the cancelled slide disappeared) and our index is now out of range, snap back safely
   useEffect(() => {
-    if (activeSlide >= availableSlides.length) setActiveSlide(0);
-  }, [availableSlides.length, activeSlide]);
+    if (activeSlide >= slideQueue.length) setActiveSlide(0);
+  }, [slideQueue.length, activeSlide]);
 
   if (error) {
     return <div className="min-h-screen bg-signage-bg flex items-center justify-center"><p className="text-signage-red">Error: {error}</p></div>;
@@ -63,20 +65,18 @@ function App() {
     return <div className="min-h-screen bg-signage-bg flex items-center justify-center"><p className="text-signage-text-dim">Loading…</p></div>;
   }
 
-  const currentKind = availableSlides[activeSlide];
+  const current = slideQueue[activeSlide];
 
   return (
     <div className="h-screen bg-signage-bg flex flex-col overflow-hidden">
       <SignageHeader location={data.location} now={now} />
-      
-      <div className="flex-1 flex items-center justify-center overflow-hidden">
-        {currentKind === 'ongoing' && <OngoingSlide sessions={data.ongoing} />}
-        {currentKind === 'upcoming' && <UpcomingSlide sessions={data.upcoming} now={now} />}
-        {currentKind === 'cancelled' && <CancelledSlide sessions={data.cancelled} />}
-        {currentKind === 'rescheduled' && <RescheduledSlide sessions={data.rescheduled} />}
+      <div className="flex-1 overflow-hidden">
+        {current?.kind === 'ongoing' && <OngoingSlide sessions={data.ongoing} page={current.page} />}
+        {current?.kind === 'upcoming' && <UpcomingSlide sessions={data.upcoming} now={now} page={current.page} />}
+        {current?.kind === 'cancelled' && <CancelledSlide sessions={data.cancelled} page={current.page} />}
+        {current?.kind === 'rescheduled' && <RescheduledSlide sessions={data.rescheduled} page={current.page} />}
       </div>
-      
-      <SlideDots activeIndex={activeSlide} />
+      <SlideDots activeKind={current?.kind} />
     </div>
   );
 }

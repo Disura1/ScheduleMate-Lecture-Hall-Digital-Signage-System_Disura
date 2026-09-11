@@ -1,16 +1,22 @@
-const SLIDE_LABELS = ['Ongoing', 'Upcoming', 'Cancelled', 'Rescheduled'];
-const SLIDE_COLORS = ['var(--color-signage-green)', 'var(--color-signage-blue)', 'var(--color-signage-red)', 'var(--color-signage-amber)'];
+type SlideKind = 'ongoing' | 'upcoming' | 'cancelled' | 'rescheduled';
 
-export function SlideDots({ activeIndex }: { activeIndex: number }) {
+const SLIDES: { kind: SlideKind; label: string; color: string }[] = [
+  { kind: 'ongoing', label: 'Ongoing', color: 'var(--color-signage-green)' },
+  { kind: 'upcoming', label: 'Upcoming', color: 'var(--color-signage-blue)' },
+  { kind: 'cancelled', label: 'Cancelled', color: 'var(--color-signage-red)' },
+  { kind: 'rescheduled', label: 'Rescheduled', color: 'var(--color-signage-amber)' },
+];
+
+export function SlideDots({ activeKind }: { activeKind: SlideKind | undefined }) {
   return (
     <div className="flex items-center gap-3 px-12 py-7">
-      {SLIDE_LABELS.map((_, i) => (
+      {SLIDES.map((s) => (
         <div
-          key={i}
+          key={s.kind}
           className="h-3.5 rounded-full transition-all"
           style={{
-            width: i === activeIndex ? '2.25rem' : '0.875rem',
-            backgroundColor: i === activeIndex ? SLIDE_COLORS[i] : 'var(--color-signage-dot-inactive)',
+            width: s.kind === activeKind ? '2.25rem' : '0.875rem',
+            backgroundColor: s.kind === activeKind ? s.color : 'var(--color-signage-dot-inactive)',
           }}
         />
       ))}
