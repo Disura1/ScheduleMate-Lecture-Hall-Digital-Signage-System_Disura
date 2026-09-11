@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSlideData, type SlideData } from './api/signage';
+import { getSlideData, getDeviceId, type SlideData } from './api/signage';
 import { SignageHeader } from './components/SignageHeader';
 import { SlideDots } from './components/SlideDots';
 import { OngoingSlide } from './slides/OngoingSlide';
@@ -18,17 +18,20 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   const [activeSlide, setActiveSlide] = useState(0);
+  const [deviceId] = useState(() => getDeviceId());
 
   useEffect(() => {
+    if (!deviceId) return; // nothing to fetch — handled by the render below
+
     function fetchData() {
-      getSlideData()
+      getSlideData(deviceId)
         .then((newData) => { setData(newData); setError(null); })
         .catch((err) => setError(err.message));
     }
     fetchData();
     const pollInterval = setInterval(fetchData, 60_000);
     return () => clearInterval(pollInterval);
-  }, []);
+  }, [deviceId]);
 
   useEffect(() => {
     const clockInterval = setInterval(() => setNow(new Date()), 1000);
@@ -58,6 +61,18 @@ function App() {
     if (activeSlide >= slideQueue.length) setActiveSlide(0);
   }, [slideQueue.length, activeSlide]);
 
+  if (!deviceId) {
+    return (
+      <div className="min-h-screen bg-signage-bg flex items-center justify-center">
+        <div className="text-center px-8">
+          <p className="text-signage-red text-lg font-semibold mb-2">No display configured</p>
+          <p className="text-signage-text-dim text-sm">
+            This screen needs a device ID. Open it as: <span className="text-signage-text">yourdomain.com/?device=DSP-XXXX</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (error) {
     return <div className="min-h-screen bg-signage-bg flex items-center justify-center"><p className="text-signage-red">Error: {error}</p></div>;
   }
