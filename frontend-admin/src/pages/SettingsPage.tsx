@@ -170,14 +170,14 @@ function AdminAccountsTab() {
               accounts.map((a) => {
                 const isSelf = a.id === currentAdmin?.id;
                 return (
-                  <tr key={a.id} className={`border-t border-gray-100 ${isSelf ? 'bg-blue-50/40' : ''} ${a.status === 'DEACTIVATED' ? 'opacity-60' : ''}`}>
-                    <td className="px-4 py-3">
+                  <tr key={a.id} className={`border-t border-gray-100 ${isSelf ? 'bg-blue-50/40' : ''}`}>
+                    <td className={`px-4 py-3 ${a.status === 'DEACTIVATED' ? 'opacity-60' : ''}`}>
                       {a.fullName}
                       {isSelf && <span className="ml-2 bg-brand-blue/10 text-brand-blue text-[10px] font-bold px-1.5 py-0.5 rounded">YOU</span>}
                     </td>
-                    <td className="px-4 py-3">{a.username}</td>
-                    <td className="px-4 py-3">{a.email}</td>
-                    <td className="px-4 py-3">
+                    <td className={`px-4 py-3 ${a.status === 'DEACTIVATED' ? 'opacity-60' : ''}`}>{a.username}</td>
+                    <td className={`px-4 py-3 ${a.status === 'DEACTIVATED' ? 'opacity-60' : ''}`}>{a.email}</td>
+                    <td className={`px-4 py-3 ${a.status === 'DEACTIVATED' ? 'opacity-60' : ''}`}>
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${a.role === 'SUPER_ADMIN' ? 'bg-brand-blue/10 text-brand-blue' : 'bg-status-gray-bg text-status-gray'}`}>
                         {a.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
                       </span>
