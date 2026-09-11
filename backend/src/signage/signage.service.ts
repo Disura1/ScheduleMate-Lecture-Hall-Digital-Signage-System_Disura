@@ -78,6 +78,7 @@ export class SignageService {
         side: display.side.sideCode,
       },
       currentTime: now.toISOString(),
+      slideDurationSeconds: display.slideDurationSeconds,
       ongoing,
       upcoming,
       cancelled,

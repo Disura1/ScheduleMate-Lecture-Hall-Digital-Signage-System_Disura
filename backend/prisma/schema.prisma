@@ -79,11 +79,12 @@ model Room {
 }
 
 model Display {
-  id               Int       @id @default(autoincrement())
-  deviceIdentifier String    @unique
-  side             Side      @relation(fields: [sideId], references: [id])
-  sideId           Int
-  lastSeenAt       DateTime?
+  id                  Int       @id @default(autoincrement())
+  deviceIdentifier    String    @unique
+  side                Side      @relation(fields: [sideId], references: [id])
+  sideId              Int
+  lastSeenAt          DateTime?
+  slideDurationSeconds Int      @default(8)
 }
 
 // ---------- ACADEMIC DATA ----------

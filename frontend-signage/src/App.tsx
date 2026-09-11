@@ -8,8 +8,6 @@ import { CancelledSlide } from './slides/CancelledSlide';
 import { RescheduledSlide } from './slides/RescheduledSlide';
 import { pageCount } from './lib/paginate';
 
-const SLIDE_DURATION_MS = 8_000;
-
 type SlideKind = 'ongoing' | 'upcoming' | 'cancelled' | 'rescheduled';
 const SLIDE_ORDER: SlideKind[] = ['ongoing', 'upcoming', 'cancelled', 'rescheduled'];
 
@@ -50,12 +48,13 @@ function App() {
   : [];
 
   useEffect(() => {
-    if (slideQueue.length === 0) return;
+    if (slideQueue.length === 0 || !data) return;
+    const durationMs = (data.slideDurationSeconds ?? 8) * 1000;
     const rotationInterval = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % slideQueue.length);
-    }, SLIDE_DURATION_MS);
+    }, durationMs);
     return () => clearInterval(rotationInterval);
-  }, [slideQueue.length]);
+  }, [slideQueue.length, data?.slideDurationSeconds]);
 
   // If the slide list shrank (e.g. the cancelled slide disappeared) and our index is now out of range, snap back safely
   useEffect(() => {
@@ -92,7 +91,7 @@ function App() {
         {current?.kind === 'cancelled' && <CancelledSlide sessions={data.cancelled} page={current.page} />}
         {current?.kind === 'rescheduled' && <RescheduledSlide sessions={data.rescheduled} page={current.page} />}
       </div>
-      <SlideDots activeKind={current?.kind} />
+      <SlideDots activeKind={current?.kind} durationSeconds={data.slideDurationSeconds} />
     </div>
   );
 }

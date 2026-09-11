@@ -7,7 +7,7 @@ const SLIDES: { kind: SlideKind; label: string; color: string }[] = [
   { kind: 'rescheduled', label: 'Rescheduled', color: 'var(--color-signage-amber)' },
 ];
 
-export function SlideDots({ activeKind }: { activeKind: SlideKind | undefined }) {
+export function SlideDots({ activeKind, durationSeconds }: { activeKind: SlideKind | undefined; durationSeconds: number }) {
   return (
     <div className="flex items-center gap-3 px-12 py-7">
       {SLIDES.map((s) => (
@@ -21,7 +21,7 @@ export function SlideDots({ activeKind }: { activeKind: SlideKind | undefined })
         />
       ))}
       <span className="text-signage-text-faintest text-sm ml-3">
-        Ongoing → Upcoming → Cancelled (if any) → Rescheduled (if any) — 8s per slide
+        Ongoing → Upcoming → Cancelled (if any) → Rescheduled (if any) — {durationSeconds}s per slide
       </span>
     </div>
   );

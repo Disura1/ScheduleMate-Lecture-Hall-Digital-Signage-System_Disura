@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getDisplays, registerDisplay, reassignDisplay, removeDisplay, type DisplayItem } from '../api/display';
+import { getDisplays, registerDisplay, updateDisplay, removeDisplay, type DisplayItem } from '../api/display';
 import { getBuildings, type Building } from '../api/structure';
 import { DisplayStatusPill, formatLastSeen } from '../components/DisplayStatusPill';
 import { Modal } from '../components/Modal';
@@ -13,7 +13,7 @@ export function DisplaysPage() {
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [reassigningDisplay, setReassigningDisplay] = useState<DisplayItem | null>(null);
+  const [editingDisplay, setEditingDisplay] = useState<DisplayItem | null>(null);
   const [removingDisplay, setRemovingDisplay] = useState<DisplayItem | null>(null);
   const { showSuccess } = useToast();
 
@@ -42,6 +42,7 @@ export function DisplaysPage() {
               <th className="px-4 py-3">Device ID</th>
               <th className="px-4 py-3">Assigned Location</th>
               <th className="px-4 py-3">Last Seen</th>
+              <th className="px-4 py-3">Slide Duration</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
@@ -59,9 +60,10 @@ export function DisplaysPage() {
                     {d.side.floor.building.name} / Floor {d.side.floor.floorNumber} / {d.side.sideCode}
                   </td>
                   <td className="px-4 py-3">{formatLastSeen(d.lastSeenAt)}</td>
+                  <td className="px-4 py-3">{d.slideDurationSeconds}s</td>
                   <td className="px-4 py-3"><DisplayStatusPill lastSeenAt={d.lastSeenAt} /></td>
                   <td className="px-4 py-3 space-x-3">
-                    <button onClick={() => setReassigningDisplay(d)} className="text-brand-blue font-semibold">Reassign</button>
+                    <button onClick={() => setEditingDisplay(d)} className="text-brand-blue font-semibold">Edit</button>
                     <button onClick={() => setRemovingDisplay(d)} className="text-status-red font-semibold">Remove</button>
                   </td>
                 </tr>
@@ -77,8 +79,8 @@ export function DisplaysPage() {
       {showNewModal && (
         <RegisterDisplayModal buildings={buildings} onClose={() => setShowNewModal(false)} onCreated={() => { setShowNewModal(false); reload(); showSuccess('Display registered successfully.'); }} />
       )}
-      {reassigningDisplay && (
-        <ReassignDisplayModal display={reassigningDisplay} buildings={buildings} onClose={() => setReassigningDisplay(null)} onSaved={() => { setReassigningDisplay(null); reload(); showSuccess('Display reassigned successfully.');  }} />
+      {editingDisplay && (
+        <EditDisplayModal display={editingDisplay} buildings={buildings} onClose={() => setEditingDisplay(null)} onSaved={() => { setEditingDisplay(null); reload(); showSuccess('Display updated successfully.');  }} />
       )}
       {removingDisplay && (
         <ConfirmModal
@@ -136,6 +138,7 @@ function RegisterDisplayModal({ buildings, onClose, onCreated }: { buildings: Bu
   const [floorId, setFloorId] = useState<number | ''>('');
   const [sideId, setSideId] = useState<number | ''>('');
   const [deviceIdentifier, setDeviceIdentifier] = useState('');
+  const [slideDuration, setSlideDuration] = useState(8);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -144,7 +147,7 @@ function RegisterDisplayModal({ buildings, onClose, onCreated }: { buildings: Bu
     setError(null);
     setSaving(true);
     try {
-      await registerDisplay({ deviceIdentifier, sideId });
+      await registerDisplay({ deviceIdentifier, sideId, slideDurationSeconds: slideDuration });
       onCreated();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -160,6 +163,14 @@ function RegisterDisplayModal({ buildings, onClose, onCreated }: { buildings: Bu
 
       <LocationPicker buildings={buildings} buildingId={buildingId} setBuildingId={setBuildingId} floorId={floorId} setFloorId={setFloorId} sideId={sideId} setSideId={setSideId} />
 
+      <label className="text-sm font-semibold text-navy block mb-1">Slide Duration (seconds)</label>
+      <input
+        type="number" min={3} max={60}
+        className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-4 text-sm"
+        value={slideDuration}
+        onChange={(e) => setSlideDuration(Number(e.target.value))}
+      />
+
       {error && <div className="bg-status-red-bg text-status-red text-sm rounded-lg p-3 mb-4">{error}</div>}
 
       <div className="flex gap-2.5">
@@ -172,10 +183,11 @@ function RegisterDisplayModal({ buildings, onClose, onCreated }: { buildings: Bu
   );
 }
 
-function ReassignDisplayModal({ display, buildings, onClose, onSaved }: { display: DisplayItem; buildings: Building[]; onClose: () => void; onSaved: () => void }) {
+function EditDisplayModal({ display, buildings, onClose, onSaved }: { display: DisplayItem; buildings: Building[]; onClose: () => void; onSaved: () => void }) {
   const [buildingId, setBuildingId] = useState<number | ''>(display.side.floor.building.id);
   const [floorId, setFloorId] = useState<number | ''>(display.side.floor.id);
   const [sideId, setSideId] = useState<number | ''>(display.sideId);
+  const [slideDuration, setSlideDuration] = useState(display.slideDurationSeconds);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -184,7 +196,7 @@ function ReassignDisplayModal({ display, buildings, onClose, onSaved }: { displa
     setError(null);
     setSaving(true);
     try {
-      await reassignDisplay(display.id, sideId);
+      await updateDisplay(display.id, { sideId, slideDurationSeconds: slideDuration });
       onSaved();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -194,15 +206,24 @@ function ReassignDisplayModal({ display, buildings, onClose, onSaved }: { displa
   }
 
   return (
-    <Modal title="Reassign Display" subtitle={`${display.deviceIdentifier} is currently assigned to ${display.side.floor.building.name} / Floor ${display.side.floor.floorNumber} / ${display.side.sideCode}.`} onClose={onClose}>
+    <Modal title="Edit Display" subtitle={`${display.deviceIdentifier} — currently ${display.side.floor.building.name} / Floor ${display.side.floor.floorNumber} / ${display.side.sideCode}.`} onClose={onClose}>
       <LocationPicker buildings={buildings} buildingId={buildingId} setBuildingId={setBuildingId} floorId={floorId} setFloorId={setFloorId} sideId={sideId} setSideId={setSideId} />
+
+      <label className="text-sm font-semibold text-navy block mb-1">Slide Duration (seconds)</label>
+      <input
+        type="number" min={3} max={60}
+        className="w-full h-10 border border-gray-200 rounded-lg px-3 mb-4 text-sm"
+        value={slideDuration}
+        onChange={(e) => setSlideDuration(Number(e.target.value))}
+      />
+      <p className="text-xs text-status-gray -mt-3 mb-4">How long each slide (Ongoing/Upcoming/Cancelled/Rescheduled) shows before advancing. Default: 8.</p>
 
       {error && <div className="bg-status-red-bg text-status-red text-sm rounded-lg p-3 mb-4">{error}</div>}
 
       <div className="flex gap-2.5">
         <button onClick={onClose} className="flex-1 h-10 border border-gray-200 rounded-lg text-sm font-semibold">Cancel</button>
         <button onClick={handleSave} disabled={saving} className="flex-1 h-10 bg-brand-blue text-white rounded-lg text-sm font-semibold disabled:opacity-60">
-          {saving ? 'Saving…' : 'Save New Assignment'}
+          {saving ? 'Saving…' : 'Save Changes'}
         </button>
       </div>
     </Modal>

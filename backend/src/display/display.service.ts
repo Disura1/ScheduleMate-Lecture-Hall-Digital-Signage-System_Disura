@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDisplayDto } from './dto/create-display.dto';
-import { ReassignDisplayDto } from './dto/reassign-display.dto';
+import { UpdateDisplayDto } from './dto/update-display.dto';
 
 @Injectable()
 export class DisplayService {
@@ -9,27 +13,35 @@ export class DisplayService {
 
   getAll() {
     return this.prisma.display.findMany({
-      include: { side: { include: { floor: { include: { building: true } } } } },
+      include: {
+        side: { include: { floor: { include: { building: true } } } },
+      },
       orderBy: { deviceIdentifier: 'asc' },
     });
   }
 
   async register(dto: CreateDisplayDto) {
-    const existing = await this.prisma.display.findUnique({ where: { deviceIdentifier: dto.deviceIdentifier } });
+    const existing = await this.prisma.display.findUnique({
+      where: { deviceIdentifier: dto.deviceIdentifier },
+    });
     if (existing) {
-      throw new ConflictException(`Device "${dto.deviceIdentifier}" is already registered`);
+      throw new ConflictException(
+        `Device "${dto.deviceIdentifier}" is already registered`,
+      );
     }
     return this.prisma.display.create({
       data: dto,
-      include: { side: { include: { floor: { include: { building: true } } } } },
+      include: {
+        side: { include: { floor: { include: { building: true } } } },
+      },
     });
   }
 
-  async reassign(id: number, dto: ReassignDisplayDto) {
+  async update(id: number, dto: UpdateDisplayDto) {
     await this.findOrThrow(id);
     return this.prisma.display.update({
       where: { id },
-      data: { sideId: dto.sideId },
+      data: { sideId: dto.sideId, slideDurationSeconds: dto.slideDurationSeconds },
       include: { side: { include: { floor: { include: { building: true } } } } },
     });
   }
@@ -41,7 +53,9 @@ export class DisplayService {
 
   // Called by the signage client on every poll — powers the "Last Seen" column (Addendum 2)
   async recordHeartbeat(deviceIdentifier: string) {
-    const display = await this.prisma.display.findUnique({ where: { deviceIdentifier } });
+    const display = await this.prisma.display.findUnique({
+      where: { deviceIdentifier },
+    });
     if (!display) {
       throw new NotFoundException(`Unknown display: ${deviceIdentifier}`);
     }

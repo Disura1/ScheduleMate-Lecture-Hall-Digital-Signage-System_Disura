@@ -1,10 +1,16 @@
-import { IsInt, IsString, MinLength } from 'class-validator';
+import { IsInt, IsString, MinLength, IsOptional, Min, Max } from 'class-validator';
 
 export class CreateDisplayDto {
   @IsString()
   @MinLength(3)
-  deviceIdentifier: string; // e.g. "DSP-0012"
+  deviceIdentifier: string;
 
   @IsInt()
   sideId: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(3)
+  @Max(60)
+  slideDurationSeconds?: number;
 }

@@ -30,6 +30,7 @@ export interface SlideData {
   upcoming: SessionData[];
   cancelled: SessionData[];
   rescheduled: SessionData[];
+  slideDurationSeconds: number;
 }
 
 export async function getSlideData(deviceId: string): Promise<SlideData> {

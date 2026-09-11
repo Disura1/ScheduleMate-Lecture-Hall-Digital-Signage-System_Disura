@@ -5,12 +5,14 @@ export interface DisplayItem {
   deviceIdentifier: string;
   sideId: number;
   lastSeenAt: string | null;
+  slideDurationSeconds: number;
   side: { id: number; sideCode: string; floor: { id: number; floorNumber: number; building: { id: number; name: string; code: string } } };
 }
 
 export interface RegisterDisplayInput {
   deviceIdentifier: string;
   sideId: number;
+  slideDurationSeconds?: number;
 }
 
 export function getDisplays() {
@@ -19,8 +21,8 @@ export function getDisplays() {
 export function registerDisplay(data: RegisterDisplayInput) {
   return api.post<DisplayItem>('/displays', data);
 }
-export function reassignDisplay(id: number, sideId: number) {
-  return api.patch<DisplayItem>(`/displays/${id}/reassign`, { sideId });
+export function updateDisplay(id: number, data: { sideId?: number; slideDurationSeconds?: number }) {
+  return api.patch<DisplayItem>(`/displays/${id}`, data);
 }
 export function removeDisplay(id: number) {
   return api.delete<DisplayItem>(`/displays/${id}`);
