@@ -10,9 +10,10 @@ import { DisplayModule } from './display/display.module';
 import { SignageModule } from './signage/signage.module';
 import { AdminAccountsModule } from './admin-accounts/admin-accounts.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), PrismaModule, AuthModule, StructureModule, SessionsModule, AcademicModule, DisplayModule, SignageModule, AdminAccountsModule],
+  imports: [ScheduleModule.forRoot(), PrismaModule, AuthModule, StructureModule, SessionsModule, AcademicModule, DisplayModule, SignageModule, AdminAccountsModule, NotificationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -169,3 +169,11 @@ model Session {
   // Speeds up conflict-check lookups; actual overlap prevention happens in application code (see note above)
   @@index([roomId, sessionDate])
 }
+
+model Notification {
+  id               Int      @id @default(autoincrement())
+  message          String
+  isActive         Boolean  @default(true)
+  createdByAdminId Int
+  createdAt        DateTime @default(now())
+}

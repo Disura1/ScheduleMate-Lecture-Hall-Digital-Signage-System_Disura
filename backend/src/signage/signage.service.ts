@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DisplayService } from '../display/display.service';
 import { startOfToday, combineDateAndTime } from '../common/date-time.util';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SignageService {
   constructor(
     private prisma: PrismaService,
     private displayService: DisplayService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async getSlideData(deviceIdentifier: string) {
@@ -71,6 +73,8 @@ export class SignageService {
       orderBy: { startTime: 'asc' },
     });
 
+    const notifications = await this.notificationsService.getActiveMessages();
+
     return {
       location: {
         building: display.side.floor.building.name,
@@ -79,6 +83,7 @@ export class SignageService {
       },
       currentTime: now.toISOString(),
       slideDurationSeconds: display.slideDurationSeconds,
+      notifications: notifications.map((n) => n.message),
       ongoing,
       upcoming,
       cancelled,
