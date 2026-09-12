@@ -13,6 +13,7 @@ import { ActivateAccountPage } from './pages/ActivateAccountPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ToastProvider } from './context/ToastContext';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/structure" element={<StructurePage />} />
                 <Route path="/sessions" element={<SessionsPage />} />
                 <Route path="/displays" element={<DisplaysPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 {/* more pages will be added here as we build them */}
               </Route>

@@ -7,6 +7,7 @@ const navItems = [
   { to: '/academic', label: 'Modules & Lecturers' },
   { to: '/sessions', label: 'Sessions' },
   { to: '/displays', label: 'Displays' },
+  { to: '/notifications', label: 'Notifications' },
   { to: '/settings', label: 'Settings' },
 ];
 
