@@ -26,11 +26,12 @@ export interface SessionData {
 export interface SlideData {
   location: { building: string; floor: number; side: string };
   currentTime: string;
+  slideDurationSeconds: number;
+  notifications: string[];
   ongoing: SessionData[];
   upcoming: SessionData[];
   cancelled: SessionData[];
   rescheduled: SessionData[];
-  slideDurationSeconds: number;
 }
 
 export async function getSlideData(deviceId: string): Promise<SlideData> {

@@ -7,6 +7,7 @@ import { UpcomingSlide } from './slides/UpcomingSlide';
 import { CancelledSlide } from './slides/CancelledSlide';
 import { RescheduledSlide } from './slides/RescheduledSlide';
 import { pageCount } from './lib/paginate';
+import { NotificationTicker } from './components/NotificationTicker';
 
 type SlideKind = 'ongoing' | 'upcoming' | 'cancelled' | 'rescheduled';
 const SLIDE_ORDER: SlideKind[] = ['ongoing', 'upcoming', 'cancelled', 'rescheduled'];
@@ -92,6 +93,7 @@ function App() {
         {current?.kind === 'rescheduled' && <RescheduledSlide sessions={data.rescheduled} page={current.page} />}
       </div>
       <SlideDots activeKind={current?.kind} durationSeconds={data.slideDurationSeconds} />
+      <NotificationTicker messages={data.notifications} />
     </div>
   );
 }
