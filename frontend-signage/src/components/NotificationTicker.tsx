@@ -25,10 +25,10 @@ export function NotificationTicker({ messages }: { messages: string[] }) {
   if (messages.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="h-11 bg-signage-header border-t-2 border-signage-border-blue overflow-hidden relative flex-shrink-0">
+    <div ref={containerRef} className="h-11 bg-signage-header border-t-2 border-signage-border-blue overflow-hidden relative shrink-0">
       <span
         ref={contentRef}
-        className="text-signage-text text-base whitespace-nowrap absolute left-0 leading-[2.75rem]"
+        className="text-signage-text text-base whitespace-nowrap absolute left-0 leading-11"
         style={
           anim
             ? { transform: `translateX(${anim.startPx}px)`, animation: `${anim.keyframeName} ${anim.duration}s linear infinite` }
